@@ -1,0 +1,949 @@
+unit fPrincipal;
+
+interface
+
+uses
+  Winapi.Windows,
+  Winapi.Messages,
+  System.SysUtils,
+  System.Variants,
+  System.Classes,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Dialogs,
+  Vcl.ExtCtrls,
+  Vcl.StdCtrls,
+  REST.Types,
+  REST.Client,
+  Data.Bind.Components,
+  Data.Bind.ObjectScope,
+  FireDAC.Stan.Intf,
+  FireDAC.Stan.Option,
+  FireDAC.Stan.Param,
+  FireDAC.Stan.Error,
+  FireDAC.DatS,
+  FireDAC.Phys.Intf,
+  FireDAC.DApt.Intf,
+  FireDAC.Stan.Async,
+  FireDAC.DApt,
+  Data.DB,
+  FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client,
+  Vcl.ComCtrls,
+  System.DateUtils,
+  Vcl.Menus,
+  System.ImageList,
+  Vcl.ImgList,
+  System.NetEncoding,
+  Vcl.DBCtrls,
+  Vcl.AppEvnts,
+  fModoADM,
+  Vcl.Samples.Gauges,
+  Vcl.Imaging.jpeg,
+  uContasReceberDAO,
+  uFunctions,
+  uCliente,
+  uVendedor,
+  uFormaPagamento,
+  uBanco,
+  uCidade,
+  uContasReceber,
+  uClienteDAO,
+  uVendedorDAO,
+  uFormaPagamentoDAO,
+  uBancoDAO,
+  uCidadeDAO,
+  uContasPagar,
+  uContasPagarDAO,
+  uQuery,
+  uToken,
+  uConnectionRest,
+  usettings,
+  uMessages,
+  fAvisos,
+  uContador,
+  System.Threading;
+
+type
+  TfrmPrincipal = class(TForm)
+    pnlPrincipal: TPanel;
+    pnlTitulo: TPanel;
+    lblVersion: TLabel;
+    imlIconsBlack24dp: TImageList;
+    opdImagem: TOpenDialog;
+    pnlEnvioAutomatico: TPanel;
+    btnIniciarComWindows: TButton;
+    btnIniciarServico: TButton;
+    btnPararServico: TButton;
+    lblStatusServico: TLabel;
+    appEvents: TApplicationEvents;
+    TrayIcon: TTrayIcon;
+    popmenu: TPopupMenu;
+    Abrir1: TMenuItem;
+    N1: TMenuItem;
+    FecharAplicao1: TMenuItem;
+    pgcPrincipal: TPageControl;
+    tbsContasPagar: TTabSheet;
+    pnlBotoes: TPanel;
+    btnSair: TButton;
+    pnlCentral: TPanel;
+    pnlEnviados: TPanel;
+    mmo_Certo: TMemo;
+    pnlRecudados: TPanel;
+    mmo_Erro: TMemo;
+    lblTotalizador: TLabel;
+    btnTestarFuncoes: TButton;
+    pnlModoAdm: TPanel;
+    btnBaixarConfiguracao: TButton;
+    pnlAviso: TPanel;
+    pnlAguarde: TPanel;
+    pnlLabelContador: TPanel;
+    lblEnvioCR: TLabel;
+    lblRecebimentoCP: TLabel;
+    lblEnvioCP: TLabel;
+    lblRecebimentoCR: TLabel;
+    tmrPrincipal: TTimer;
+    procedure btnSairClick(Sender: TObject);
+    procedure btnTestarFuncoesClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure pnlModoAdmClick(Sender: TObject);
+    procedure btnIniciarServicoClick(Sender: TObject);
+    procedure btnPararServicoClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormResize(Sender: TObject);
+    procedure btnBaixarConfiguracaoClick(Sender: TObject);
+    procedure tmrPrincipalTimer(Sender: TObject);
+
+  private
+    { Private declarations }
+    arrayTarefas: array [0 .. 1] of ITask;
+    procedure testeTask;
+    procedure TestarIntegrador;
+    procedure printCR;
+    procedure printCP;
+    procedure printToken;
+    procedure InicioForm(pBoolean: Boolean);
+    procedure InicioMemos;
+    procedure iniciaServicoEnvioAutomatico;
+    procedure IniciaComWindows;
+    procedure ParaServicoEnvioAutomatico;
+    procedure EscondeTela;
+    procedure ValidaUnicaEstanciaSistema;
+    procedure TotalizadorAPI;
+    procedure AlteraEnabledBotoes(pTrue: Boolean = true);
+
+    procedure EventoTimerCP(Sender: TObject);
+    procedure EventoTimerCR(Sender: TObject);
+    procedure EventoTimerSt(Sender: TObject);
+    procedure AlimentaMemos;
+    procedure AtualizaLabelMensagens;
+
+    function getConfig: Boolean;
+    function EnviaCP(pDataIniProc: TDateTime): Boolean;
+    function EnviaCR(pDataIniProc: TDateTime): Boolean;
+    function ValidaEmpresaContemCodigoEChave: Boolean;
+    function PermiteRodarTrigger: Boolean;
+  public
+    { Public declarations }
+  end;
+
+var
+  frmPrincipal: TfrmPrincipal;
+
+implementation
+
+{$R *.dfm}
+
+procedure TfrmPrincipal.InicioMemos;
+begin
+  mmo_Certo.Clear;
+  mmo_Certo.Lines.Add('Processo correto:');
+
+  mmo_Erro.Clear;
+  mmo_Erro.Lines.Add('Erro no processo:');
+end;
+
+procedure TfrmPrincipal.IniciaComWindows;
+var
+  lPathApp: string;
+begin
+  try
+    lPathApp := Application.exeName;
+    TFunctions.RegisterAppOnWindows(lPathApp);
+  except
+    on e: exception do
+    begin
+      ShowMessage('Erro ao tentar configurar o aplicativo para iniciar com o Windows!' + slinebreak + e.Message);
+    end;
+  end;
+end;
+
+procedure TfrmPrincipal.iniciaServicoEnvioAutomatico;
+var
+  lIntervaloCP, lIntervaloCR, lIntervaloSt: Integer;
+begin
+  lIntervaloCP := 0;
+  lIntervaloCR := 0;
+  lIntervaloSt := 0;
+
+  Tsettings.settings.Carrega;
+  if Tsettings.settings.ValidaCamposNecessarios then
+  begin
+    lblStatusServico.Caption := 'Status: Ligado';
+    lblStatusServico.Font.Color := clGreen;
+    lblStatusServico.update;
+
+    lIntervaloCP := (1000 * 60) * Tsettings.settings.IntervaloEnvioCP;
+    Tsettings.settings.timerCP.Interval := lIntervaloCP;
+    Tsettings.settings.timerCP.OnTimer := EventoTimerCP;
+    Tsettings.settings.timerCP.Enabled := False;
+
+    lIntervaloCR := (1000 * 60) * Tsettings.settings.IntervaloEnvioCR;
+    Tsettings.settings.timerCR.Interval := lIntervaloCR;
+    Tsettings.settings.timerCR.OnTimer := EventoTimerCR;
+    Tsettings.settings.timerCR.Enabled := False;
+
+    lIntervaloSt := (1000 * 60) * 10;
+    Tsettings.settings.timerSt.Interval := lIntervaloSt;
+    Tsettings.settings.timerSt.OnTimer := EventoTimerSt;
+    Tsettings.settings.timerSt.Enabled := False;
+
+    if (lIntervaloCP = 0) and (lIntervaloCR = 0) then
+    begin
+      Tsettings.settings.timerCP.Enabled := False;
+      Tsettings.settings.timerCR.Enabled := False;
+      Tsettings.settings.timerSt.Enabled := False;
+
+      lblStatusServico.Caption := 'Status: desligado';
+      lblStatusServico.Font.Color := clRed;
+      lblStatusServico.update;
+
+      ShowMessage('Favor conferir na configuração o intervalo de envio.');
+    end
+    else
+    begin
+      if Tsettings.settings.UtilizaCP then
+      begin
+        Tsettings.settings.timerCP.Interval := lIntervaloCP;
+        Tsettings.settings.timerCP.Enabled := true;
+      end;
+
+      if Tsettings.settings.UtilizaCR then
+      begin
+        Tsettings.settings.timerCR.Interval := lIntervaloCR;
+        Tsettings.settings.timerCR.Enabled := true;
+      end;
+
+      Tsettings.settings.timerSt.Interval := lIntervaloSt;
+      Tsettings.settings.timerSt.Enabled := true;
+    end;
+  end
+  else
+  begin
+    ParaServicoEnvioAutomatico;
+  end;
+end;
+
+procedure TfrmPrincipal.ParaServicoEnvioAutomatico;
+begin
+  lblStatusServico.Caption := 'Status: Desligado';
+  lblStatusServico.Font.Color := clRed;
+
+  Tsettings.settings.timerCP.Enabled := False;
+  Tsettings.settings.timerCR.Enabled := False;
+  Tsettings.settings.timerSt.Enabled := False;
+
+  Tsettings.settings.UtilizaCP := False;
+  Tsettings.settings.UtilizaCR := False;
+end;
+
+function TfrmPrincipal.PermiteRodarTrigger: Boolean;
+begin
+  result := Application.MessageBox('Deseja Rodar o processo de criação de triggers CP e CR?', 'Não',
+    mb_yesno + mb_iconquestion) = id_yes;
+end;
+
+procedure TfrmPrincipal.TotalizadorAPI;
+begin
+  Tsettings.settings.ContadorIntegracao := Tsettings.settings.ContadorIntegracao + 1;
+  lblTotalizador.Caption := 'Total Conexões API: ' + inttostr(Tsettings.settings.ContadorIntegracao) + ' ';
+  lblTotalizador.update;
+end;
+
+function TfrmPrincipal.ValidaEmpresaContemCodigoEChave: Boolean;
+var
+  lQuery: TQuery;
+  lhttp: tConnectionRest;
+  lCNPJ: string;
+begin
+  result := true;
+  try
+    lQuery := TQuery.Create(nil);
+    lhttp := tConnectionRest.Create;
+    try
+      lQuery.Close;
+      lQuery.SQL.Clear;
+      lQuery.SQL.Add('SELECT * FROM MC27PROP                                                        ');
+      lQuery.SQL.Add('where ((AC27_CHAVE is null) or (AC27_CHAVE = '''') or (AN27CODI_INT is null)) ');
+      lQuery.Open;
+      if lQuery.recordcount > 0 then // Se tem registros
+      begin
+        while not lQuery.Eof do
+        begin
+          if lQuery.FieldByName('AC27CNPJ').AsSTRING <> EmptyStr then
+          begin
+            lCNPJ := lQuery.FieldByName('AC27CNPJ').AsSTRING;
+            lhttp.getCodigoEChaveEmpresa(lCNPJ);
+          end;
+
+          lQuery.next;
+        end;
+      end;
+
+    finally
+      lQuery.Free;
+      lhttp.Free;
+    end;
+
+  except
+    on e: exception do
+    begin
+      ShowMessage('Problemas ao salvar a configuração.');
+      result := False;
+    end;
+  end;
+
+end;
+
+procedure TfrmPrincipal.ValidaUnicaEstanciaSistema;
+begin
+  CreateMutex(nil, False, 'IntegradorFinanceiro');
+  if GetLastError = ERROR_ALREADY_EXISTS then
+  begin
+    MessageBox(0, 'Este programa já está sendo executado.', 'IntegradorContasPagar', MB_ICONSTOP);
+    Halt(0);
+  end;
+end;
+
+procedure TfrmPrincipal.InicioForm(pBoolean: Boolean);
+begin
+  pgcPrincipal.ActivePage := tbsContasPagar;
+  lblTotalizador.Visible := False;
+  lblTotalizador.Visible := true;
+end;
+
+procedure TfrmPrincipal.AlimentaMemos;
+begin
+
+  if (TMessages.Messages.messageok <> EmptyStr) then
+  begin
+    mmo_Certo.Lines.Add(TMessages.Messages.messageok);
+    mmo_Certo.Lines.Add('-----------------------------------------------------------------------------');
+  end;
+
+  if (TMessages.Messages.messageerro <> EmptyStr) then
+  begin
+    mmo_Erro.Lines.Add(TMessages.Messages.messageerro);
+    mmo_Erro.Lines.Add('-----------------------------------------------------------------------------');
+  end;
+end;
+
+procedure TfrmPrincipal.AlteraEnabledBotoes(pTrue: Boolean);
+begin
+  btnTestarFuncoes.Enabled := pTrue;
+  btnSair.Enabled := pTrue;
+  btnIniciarServico.Enabled := pTrue;
+  btnPararServico.Enabled := pTrue;
+  btnIniciarComWindows.Enabled := pTrue;
+  btnBaixarConfiguracao.Enabled := pTrue;
+end;
+
+procedure TfrmPrincipal.AtualizaLabelMensagens;
+begin
+  lblRecebimentoCR.Caption := 'Recebimento Contas Receber: ' + TContador.Contador.RecebimentoCR.ToString + '/' +
+    TContador.Contador.TotalRecebimentoCR.ToString + '     ';
+  lblRecebimentoCR.update;
+
+  lblRecebimentoCP.Caption := 'Recebimento Contas Pagar: ' + TContador.Contador.RecebimentoCP.ToString + '/' +
+    TContador.Contador.TotalRecebimentoCP.ToString + '     ';
+  lblRecebimentoCP.update;
+
+  lblEnvioCR.Caption := 'Envio Contas Receber: ' + TContador.Contador.EnvioCR.ToString + '/' +
+    TContador.Contador.TotalEnvioCR.ToString + '     ';
+  lblEnvioCR.update;
+
+  lblEnvioCP.Caption := 'Envio Contas Pagar: ' + TContador.Contador.EnvioCP.ToString + '/' +
+    TContador.Contador.TotalEnvioCP.ToString + '     ';
+  lblEnvioCP.update;
+end;
+
+procedure TfrmPrincipal.btnIniciarServicoClick(Sender: TObject);
+begin
+  iniciaServicoEnvioAutomatico;
+end;
+
+procedure TfrmPrincipal.btnPararServicoClick(Sender: TObject);
+begin
+  ParaServicoEnvioAutomatico;
+end;
+
+procedure TfrmPrincipal.btnSairClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TfrmPrincipal.btnTestarFuncoesClick(Sender: TObject);
+begin
+  // função para forçar envio
+  TestarIntegrador;
+end;
+
+procedure TfrmPrincipal.btnBaixarConfiguracaoClick(Sender: TObject);
+begin
+  ValidaEmpresaContemCodigoEChave;
+  getConfig;
+  iniciaServicoEnvioAutomatico;
+end;
+
+function TfrmPrincipal.EnviaCP(pDataIniProc: TDateTime): Boolean;
+var
+  lContasPagar: TContasPagar;
+  lQueryCP: TQuery;
+  lTitulo: string;
+  lExcluido, lEnviado: Boolean;
+  lUltimoSincronismo: TDateTime;
+
+begin
+  TContador.Contador.EnvioCP := 0;
+  TContador.Contador.TotalEnvioCP := 0;
+  TMessages.Messages.messageok := EmptyStr;
+  TMessages.Messages.messageerro := EmptyStr;
+
+  // Data ultimo sinc é passada no post e put para caso der sucesso  utiliza-la -1
+  // para atualizar o registro e não reenviar o cp nos próximos envio
+  lUltimoSincronismo := IncMinute(TFunctions.RetornaUltimoSincCP, -1);
+
+  lContasPagar := TContasPagar.Create;
+  lQueryCP := TQuery.Create(nil);
+  try
+    // Carrega query para montar os json
+    lQueryCP.SQL.Clear;
+    lQueryCP.SQL.Add(' select                                                              ');
+    lQueryCP.SQL.Add('   P.AC08TIT                                                         ');
+    lQueryCP.SQL.Add(' , P.AC08EMP_TIT                                                     ');
+    lQueryCP.SQL.Add(' , I.DATA_ATUALIZACAO dt_att                                         ');
+    lQueryCP.SQL.Add(' , I.EXCLUIDO EXCLUIDO                                               ');
+    lQueryCP.SQL.Add(' , I.ENVIADO ENVIADO                                                 ');
+    lQueryCP.SQL.Add(' from MC08CPAG  P                                                    ');
+    lQueryCP.SQL.Add(' inner join  TBL_INTEG_CP I                                          ');
+    lQueryCP.SQL.Add(' on (P.AC08TIT = I.TITULO)                                           ');
+    lQueryCP.SQL.Add(' WHERE I.DATA_ATUALIZACAO >= :ULTIMO_SINC                            ');
+    lQueryCP.SQL.Add(' order by P.AD08VCTO, P.AC08TIT                                      ');
+    lQueryCP.ParamByName('ULTIMO_SINC').AsDateTime := TFunctions.RetornaUltimoSincCP;
+    lQueryCP.Open;
+    lQueryCP.fetchall;
+    lQueryCP.First;
+    TContador.Contador.TotalEnvioCP := lQueryCP.recordcount;
+
+    if lQueryCP.recordcount > 0 then // Percorre para ir montando cada json envio
+    begin
+      while not(lQueryCP.Eof) do
+      begin
+        TContador.Contador.EnvioCP := TContador.Contador.EnvioCP + 1;
+        lExcluido := lQueryCP.FieldByName('EXCLUIDO').AsSTRING = 'S';
+        lTitulo := lQueryCP.FieldByName('AC08TIT').AsSTRING;
+        lEnviado := lQueryCP.FieldByName('ENVIADO').AsSTRING = 'S';
+
+        // Carrega pelo titulo para gerar json
+        lContasPagar.titulo := lTitulo;
+        TContasPagarDAO.Carrega(lContasPagar);
+
+        lContasPagar.data_ultimo_sincronismo := TFunctions.DecodeDateHourJson(IncSecond(pDataIniProc, -1));
+
+        if lExcluido then // Controlamos pelo sku código empresa + titulo
+        begin
+          if not(TContasPagarDAO.Delete(lContasPagar.empresa_titulo, lContasPagar.data_ultimo_sincronismo)) then
+          begin
+            Tsettings.settings.PermiteAlterarDataSincronismoCP := False;
+          end;
+        end
+        else
+        begin
+          lContasPagar.chave_empresa := TFunctions.RetornaChaveEmpresaTitulo(lTitulo);
+
+          if lEnviado then // Controlamos pelo sku código empresa + titulo
+          begin
+            if trim(lContasPagar.empresa_titulo) <> EmptyStr then
+            begin
+              lContasPagar.titulo := lContasPagar.empresa_titulo;
+            end;
+
+            // Alteração API
+            if not(TContasPagarDAO.put(lTitulo, lUltimoSincronismo, lContasPagar)) then
+            begin
+              Tsettings.settings.PermiteAlterarDataSincronismoCP := False;
+            end;
+          end
+          else
+          begin
+            // Inclusão API
+            lContasPagar.titulo := TFunctions.RetornaCodigoEmpresa + '-' + lTitulo;
+            if not(TContasPagarDAO.post(lTitulo, lUltimoSincronismo, lContasPagar)) then
+            begin
+              Tsettings.settings.PermiteAlterarDataSincronismoCP := False;
+            end;
+          end;
+        end;
+
+        lQueryCP.next;
+      end;
+    end;
+
+    result := Tsettings.settings.PermiteAlterarDataSincronismoCP;
+  finally
+    lContasPagar.Free;
+    lQueryCP.Free;
+  end;
+
+end;
+
+function TfrmPrincipal.EnviaCR(pDataIniProc: TDateTime): Boolean;
+var
+  lContasReceber: TContasReceber;
+  lQueryCR: TQuery;
+  lDuplicata: string;
+  lExcluido, lEnviado: Boolean;
+  lUltimoSincronismo: TDateTime;
+begin
+  TContador.Contador.EnvioCR := 0;
+  TContador.Contador.TotalEnvioCR := 0;
+  TMessages.Messages.messageok := EmptyStr;
+  TMessages.Messages.messageerro := EmptyStr;
+
+  // Data ultimo sinc é passada no post e put para caso der sucesso  utiliza-la -1
+  // para atualizar o registro e não reenviar o cr nos próximos envio
+  lUltimoSincronismo := IncMinute(TFunctions.RetornaUltimoSincCR, -1);
+
+  lContasReceber := TContasReceber.Create;
+  lQueryCR := TQuery.Create(nil);
+  try
+    // Carrega query para montar os json
+    lQueryCR.SQL.Clear;
+    lQueryCR.SQL.Add(' select                                                              ');
+    lQueryCR.SQL.Add('   P.AC09DUP                                                         ');
+    lQueryCR.SQL.Add(' , P.AC09EMP_DUP                                                     ');
+    lQueryCR.SQL.Add(' , I.DATA_ATUALIZACAO dt_att                                         ');
+    lQueryCR.SQL.Add(' , I.EXCLUIDO EXCLUIDO                                               ');
+    lQueryCR.SQL.Add(' , I.ENVIADO ENVIADO                                                 ');
+    lQueryCR.SQL.Add(' from MC09CREC  P                                                    ');
+    lQueryCR.SQL.Add(' inner join  TBL_INTEG_CR I                                          ');
+    lQueryCR.SQL.Add(' on (P.AC09DUP = I.DUPLICATA)                                        ');
+    lQueryCR.SQL.Add(' WHERE I.DATA_ATUALIZACAO >= :ULTIMO_SINC                            ');
+    lQueryCR.SQL.Add(' order by P.AD09VCTO, P.AC09DUP                                      ');
+    lQueryCR.ParamByName('ULTIMO_SINC').AsDateTime := TFunctions.RetornaUltimoSincCR;
+    lQueryCR.Open;
+    lQueryCR.fetchall;
+    lQueryCR.First;
+    TContador.Contador.TotalEnvioCR := lQueryCR.recordcount;
+
+    if lQueryCR.recordcount > 0 then // Percorre para ir montando cada json envio
+    begin
+      while not(lQueryCR.Eof) do
+      begin
+        TContador.Contador.EnvioCR := TContador.Contador.EnvioCR + 1;
+        lExcluido := lQueryCR.FieldByName('EXCLUIDO').AsSTRING = 'S';
+        lDuplicata := lQueryCR.FieldByName('AC09DUP').AsSTRING;
+        lEnviado := lQueryCR.FieldByName('ENVIADO').AsSTRING = 'S';
+
+        lContasReceber.Duplicata := lDuplicata;
+        TContasReceberDao.Carrega(lContasReceber);
+        lContasReceber.data_ultimo_sincronismo := TFunctions.DecodeDateHourJson(IncSecond(pDataIniProc, -1));
+
+        if lExcluido then // Controlamos pelo sku código empresa + duplicata
+        begin
+          if not(TContasReceberDao.Delete(lContasReceber.empresa_duplicata, lContasReceber.data_ultimo_sincronismo))
+          then
+          begin
+            Tsettings.settings.PermiteAlterarDataSincronismoCR := False;
+          end;
+        end
+        else
+        begin
+          lContasReceber.chave_empresa := TFunctions.RetornaChaveEmpresaDuplicata(lDuplicata);
+
+          if lEnviado then // Controlamos pelo sku código empresa + duplicata
+          begin
+            if (lContasReceber.empresa_duplicata <> EmptyStr) then
+            begin
+              lContasReceber.Duplicata := lContasReceber.empresa_duplicata;
+            end
+            else
+            begin
+              lContasReceber.Duplicata := TFunctions.RetornaCodigoEmpresa + '-' + lDuplicata;
+            end;
+
+            // Alteração API
+            if not(TContasReceberDao.put(lDuplicata, lUltimoSincronismo, lContasReceber)) then
+            begin
+              Tsettings.settings.PermiteAlterarDataSincronismoCR := False;
+            end;
+          end
+          else
+          begin
+            // Inclusão API
+            lContasReceber.Duplicata := TFunctions.RetornaCodigoEmpresa + '-' + lDuplicata;
+            if not(TContasReceberDao.post(lDuplicata, lUltimoSincronismo, lContasReceber)) then
+            begin
+              Tsettings.settings.PermiteAlterarDataSincronismoCR := False;
+            end;
+          end;
+        end;
+
+        lQueryCR.next;
+      end;
+    end;
+
+    result := Tsettings.settings.PermiteAlterarDataSincronismoCR;
+
+  finally
+    lContasReceber.Free;
+    lQueryCR.Free;
+  end;
+
+end;
+
+procedure TfrmPrincipal.EventoTimerCP(Sender: TObject);
+var
+  lGetContasPagarOk, lPostContasPagarOk: Boolean;
+  lDataInicio: TDateTime;
+begin
+  if Tsettings.settings.UtilizaCP then
+  begin
+    Tsettings.settings.PermiteAlterarDataSincronismoCP := true;
+
+    lDataInicio := TFunctions.DateServer; // Hora inicial
+
+    // Baixo as CP da nuvem e mostro a msg no memo
+    lGetContasPagarOk := TContasPagarDAO.Get;
+    AlimentaMemos;
+
+    // Envio as CP de POST, PUT e DELETE para nuvem e mostro a msg no memo
+    lPostContasPagarOk := EnviaCP(lDataInicio);
+    AlimentaMemos;
+
+    // Se não deu erro atualizo data ultimo sincronismo CP
+    if Tsettings.settings.PermiteAlterarDataSincronismoCP then
+    begin
+      if (lGetContasPagarOk) and (lPostContasPagarOk) then
+      begin
+        TFunctions.AtualizaDataUltimaConexaoCP(lDataInicio); // Passa hora inicial para o commit
+      end;
+    end;
+  end;
+end;
+
+procedure TfrmPrincipal.EventoTimerCR(Sender: TObject);
+var
+  lGetContasReceberOk, lPostContasReceberOk: Boolean;
+  lDataInicio: TDateTime;
+begin
+  if Tsettings.settings.UtilizaCR then
+  begin
+    Tsettings.settings.PermiteAlterarDataSincronismoCR := true;
+    lDataInicio := TFunctions.DateServer;
+    // Hora inicial
+
+    // Baixo as CR da nuvem e mostro a msg no memo
+    lGetContasReceberOk := TContasReceberDao.Get;
+    AlimentaMemos;
+
+    // Envio as CR de POST, PUT e DELETE para nuvem e mostro a msg no memo
+    lPostContasReceberOk := EnviaCR(lDataInicio);
+    AlimentaMemos;
+
+    // Se não deu erro atualizo data ultimo sincronismo CR
+    if Tsettings.settings.PermiteAlterarDataSincronismoCR then
+    begin
+      if (lGetContasReceberOk) and (lPostContasReceberOk) then
+      begin
+        TFunctions.AtualizaDataUltimaConexaoCR(lDataInicio); // Passa hora inicial para o commit
+      end;
+    end;
+  end;
+end;
+
+procedure TfrmPrincipal.EventoTimerSt(Sender: TObject);
+begin
+  getConfig;
+  TotalizadorAPI;
+end;
+
+procedure TfrmPrincipal.FormCreate(Sender: TObject);
+var
+  lEmpresa: string;
+begin
+  ValidaUnicaEstanciaSistema;
+  Tsettings.settings.ContadorIntegracao := 0;
+
+  EscondeTela;
+  InicioMemos;
+  FormResize(Self);
+  InicioForm(False);
+  getConfig;
+  Tsettings.settings.Carrega;
+
+  if not(TFunctions.ValidaCodigoEChaveEmpresa) then
+  begin
+    ValidaEmpresaContemCodigoEChave;
+  end;
+
+  lEmpresa := TFunctions.RetornaNomeEmpresa;
+  if trim(lEmpresa) <> EmptyStr then
+  begin
+    lblVersion.Caption := 'Versão: ' + TFunctions.VersaoSistema + '   -   ' + lEmpresa;
+  end
+  else
+  begin
+    lblVersion.Caption := '';
+  end;
+
+  if Tsettings.settings.ValidaCamposNecessarios then
+  begin
+    iniciaServicoEnvioAutomatico;
+  end
+  else
+  begin
+    ParaServicoEnvioAutomatico;
+  end;
+end;
+
+procedure TfrmPrincipal.FormResize(Sender: TObject);
+begin
+  pnlEnviados.Height := pnlCentral.Height div 2;
+  pnlRecudados.Height := pnlCentral.Height div 2;
+end;
+
+procedure TfrmPrincipal.FormShow(Sender: TObject);
+begin
+  WindowState := wsMaximized;
+  Tsettings.settings.ContadorIntegracao := 0;
+  lblTotalizador.Caption := 'Total Conexões API: ' + inttostr(Tsettings.settings.ContadorIntegracao) + ' ';
+  lblTotalizador.update;
+end;
+
+function TfrmPrincipal.getConfig: Boolean;
+var
+  lhttp: tConnectionRest;
+begin
+  lhttp := tConnectionRest.Create;
+  try
+    lhttp.GetConfiguracao;
+  finally
+    lhttp.Free;
+  end;
+end;
+
+procedure TfrmPrincipal.EscondeTela;
+begin
+  Self.Hide;
+  Self.WindowState := wsMinimized;
+  TrayIcon.Visible := true;
+  TrayIcon.Animate := true;
+  TrayIcon.ShowBalloonHint;
+  ShowWindow(Application.Handle, SW_HIDE);
+  // não mostra a aplicação na barra de tarefas ao minimizar
+end;
+
+procedure TfrmPrincipal.pnlModoAdmClick(Sender: TObject);
+var
+  lFormulario: TfrmModoADM;
+  lPermite: Boolean;
+begin
+  lFormulario := TfrmModoADM.Create(nil);
+  try
+    lFormulario.ShowModal;
+    InicioForm(lFormulario.PermiteModoADM);
+
+    if lFormulario.PermiteModoADM then
+    begin
+      lPermite := Application.MessageBox('Deseja Rodar o processo de criação de triggers CP e CR?',
+        'Processo de criação de triggers CP e CR', mb_yesno + mb_iconquestion) = id_yes;
+
+      if lPermite then
+      begin
+        Tsettings.settings.RodaScriptTriggers;
+      end;
+    end;
+  finally
+    lFormulario.Free;
+  end;
+
+end;
+
+procedure TfrmPrincipal.printCP;
+var
+  lContasPagar: TContasPagar;
+  lQueryCP: TQuery;
+begin
+  lContasPagar := TContasPagar.Create;
+  lQueryCP := TQuery.Create(nil);
+  try
+    lQueryCP.SQL.Clear;
+    lQueryCP.SQL.Add('select AC08TIT from MC08CPAG ');
+    lQueryCP.SQL.Add(' where AC08TIT = :AC08TIT    ');
+    lQueryCP.SQL.Add('order by AC08TIT             ');
+    lQueryCP.ParamByName('AC08TIT').AsSTRING := '000001';
+    lQueryCP.Open;
+    lQueryCP.First;
+
+    if lQueryCP.recordcount > 0 then
+    begin
+      while not(lQueryCP.Eof) do
+      begin
+        lContasPagar.titulo := lQueryCP.FieldByName('AC08TIT').AsSTRING;
+        TContasPagarDAO.Carrega(lContasPagar);
+        TFunctions.writeJson('cp', lContasPagar.tojsonWithEmpty); // showmessage(lContasPagar.tojson);
+
+        lQueryCP.next;
+      end;
+    end;
+
+  finally
+    lContasPagar.Free;
+    lQueryCP.Free;
+  end;
+
+end;
+
+procedure TfrmPrincipal.printCR;
+var
+  lContasReceber: TContasReceber;
+  lQueryCR: TQuery;
+begin
+  lContasReceber := TContasReceber.Create;
+  lQueryCR := TQuery.Create(nil);
+  try
+    lQueryCR.SQL.Clear;
+    lQueryCR.SQL.Add('select AC09DUP from MC09CREC ');
+    lQueryCR.SQL.Add(' where AC09DUP = :AC09DUP    ');
+    lQueryCR.SQL.Add('order by AC09DUP             ');
+    lQueryCR.ParamByName('AC09DUP').AsSTRING := '00003/05-A';
+    lQueryCR.Open;
+    lQueryCR.First;
+
+    if lQueryCR.recordcount > 0 then
+    begin
+      while not(lQueryCR.Eof) do
+      begin
+        lContasReceber.Duplicata := lQueryCR.FieldByName('AC09DUP').AsSTRING;
+        TContasReceberDao.Carrega(lContasReceber);
+        TFunctions.writeJson('cr', lContasReceber.tojsonWithEmpty); // showmessage(lContasReceber.tojson);
+
+        lQueryCR.next;
+      end;
+    end;
+
+  finally
+    lContasReceber.Free;
+    lQueryCR.Free;
+  end;
+end;
+
+procedure TfrmPrincipal.printToken;
+var
+  lhttp: tConnectionRest;
+begin
+
+  lhttp := tConnectionRest.Create;
+  try
+    lhttp.GetAccessToken;
+    ShowMessage(Tsettings.settings.Access_Token);
+  finally
+    lhttp.Free;
+  end;
+end;
+
+procedure TfrmPrincipal.TestarIntegrador;
+var
+  lFormulario: TfrmAvisos;
+begin
+  lFormulario := TfrmAvisos.Create(nil);
+  try
+    AlteraEnabledBotoes(False);
+    Screen.Cursor := crHourGlass;
+
+    lFormulario.Show;
+    lFormulario.pnlTitulo.Caption := 'Conectando com API... Recebendo/Enviando Registros...';
+    lFormulario.pnlTitulo.update;
+
+    EventoTimerSt(Self); // Pega config
+    EventoTimerCP(Self); // Integração CP
+    EventoTimerCR(Self); // Integração CR
+
+    TotalizadorAPI;
+    Sleep(3000);
+
+    AlteraEnabledBotoes;
+    Screen.Cursor := crdefault;
+  finally
+    lFormulario.Free;
+  end;
+end;
+
+procedure TfrmPrincipal.testeTask;
+var
+  lFormulario: TfrmAvisos;
+  lTask1, lTask2, lTask3: ITask;
+  lTerminou: Boolean;
+begin
+  lTerminou := False;
+
+  lTask1 := TTask.run(
+    procedure
+    begin
+      TThread.Synchronize(TThread.currentthread,
+        procedure
+        begin
+          pnlAviso.Visible := true;
+          AlteraEnabledBotoes(False);
+          Screen.Cursor := crHourGlass;
+
+          EventoTimerSt(Self); // Pega config
+          EventoTimerCP(Self); // Integração CP
+          EventoTimerCR(Self); // Integração CR
+
+          AlteraEnabledBotoes;
+
+          Screen.Cursor := crdefault;
+          pnlAviso.Visible := False;
+          lTerminou := true;
+        end);
+    end);
+
+  lTask2 := TTask.run(
+    procedure
+    begin
+      TThread.Synchronize(TThread.currentthread,
+        procedure
+        begin
+          while not(lTerminou) do
+          begin
+            TThread.Queue(nil,
+              procedure
+              begin
+                AtualizaLabelMensagens;
+              end);
+          end;
+        end);
+    end);
+
+  // TTask.WaitForAll([lTask1, lTask2, lTask3]);
+end;
+
+procedure TfrmPrincipal.tmrPrincipalTimer(Sender: TObject);
+begin
+  AtualizaLabelMensagens;
+end;
+
+end.

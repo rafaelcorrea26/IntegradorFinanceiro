@@ -1,0 +1,36 @@
+object frmView: TfrmView
+  Left = 0
+  Top = 0
+  Caption = 'frmView'
+  ClientHeight = 291
+  ClientWidth = 696
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  Position = poScreenCenter
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+  object Button1: TButton
+    Left = 0
+    Top = 0
+    Width = 696
+    Height = 291
+    Align = alClient
+    Caption = 'Teste'
+    Font.Charset = ANSI_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -96
+    Font.Name = 'Arial'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 0
+    OnClick = Button1Click
+    ExplicitWidth = 776
+    ExplicitHeight = 83
+  end
+end

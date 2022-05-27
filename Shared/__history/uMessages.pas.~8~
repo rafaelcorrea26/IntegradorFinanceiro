@@ -1,0 +1,30 @@
+unit uMessages;
+
+interface
+
+uses
+  uInterfacesAPI;
+
+type
+
+  TMessages = class;
+
+  TMessages = class(TInterfacedObject, iMessages)
+  private
+    class var FMessageOk: string;
+    class var FMessageErro: string;
+
+    class var FMessages: TMessages;
+  public
+    class property MessageOk: string read FMessageOk write FMessageOk;
+    class property MessageErro: string read FMessageErro write FMessageErro;
+
+    class procedure ReleaseMe;
+    class function GetMessages: TMessages; static;
+    class property Messages: TMessages read GetMessages write FMessages;
+
+  end;
+
+implementation
+
+end.

@@ -1,0 +1,104 @@
+unit uAuthentication; // Classe que gera autenticação
+
+interface
+
+uses
+  uInterfacesHttp,
+  REST.Authenticator.Basic,
+  System.NetEncoding,
+  System.SysUtils,
+  REST.Client,
+  uTypeAuth,
+  uSettings;
+
+type
+  TAuthentication = class;
+
+  TAuthentication = class(TInterfacedObject, iAuth)
+  private
+  public
+    destructor Destroy; override;
+    constructor Create;
+    class procedure AuthBearer(pRestRequest: TRESTRequest);
+    class procedure AuthAccess(pRestRequest: TRESTRequest);
+    class function BasicAuth(pUsername, pPassword: String): THTTPBasicAuthenticator;
+    class function Base64(pInput: String): string;
+
+  end;
+
+implementation
+
+class function TAuthentication.BasicAuth(pUsername, pPassword: String): THTTPBasicAuthenticator;
+var
+  lBasicAuth: THTTPBasicAuthenticator;
+begin
+
+  lBasicAuth := THTTPBasicAuthenticator.Create(nil);
+  try
+    lBasicAuth.ResetToDefaults;
+    lBasicAuth.Username := pUsername;
+    lBasicAuth.Password := Base64(pPassword);
+
+    result := lBasicAuth;
+  finally
+    lBasicAuth.Free;
+  end;
+
+end;
+
+class procedure TAuthentication.AuthAccess(pRestRequest: TRESTRequest);
+begin
+  pRestRequest.Params.AddHeader('access_token', TSettings.settings.Access_Token);
+end;
+
+class procedure TAuthentication.AuthBearer(pRestRequest: TRESTRequest);
+begin
+  pRestRequest.Params.AddHeader('Authorization', 'Bearer' + TSettings.settings.Access_Token);
+end;
+
+class function TAuthentication.Base64(pInput: String): string;
+var
+  lString, lResult: string;
+  lBase64: TBase64Encoding;
+begin
+
+  if (Copy(pInput, 1, 6) = 'Basic ') and (pInput.Length > 12) then
+  begin
+
+    lString := Copy(pInput, 7, pInput.Length);
+
+    try
+      lBase64 := TBase64Encoding.Create;
+
+      lResult := lBase64.Decode(lString);
+
+      lResult := Copy(lResult, 35, lResult.Length);
+
+      result := lResult;
+    except
+      on E: Exception do
+      begin
+        result := pInput;
+      end;
+    end;
+  end
+  else if pInput = 'Basic senha' then
+  begin
+    result := 'senha'
+  end
+  else
+  begin
+    result := pInput;
+  end;
+end;
+
+constructor TAuthentication.Create;
+begin
+
+end;
+
+destructor TAuthentication.Destroy;
+begin
+end;
+
+end.

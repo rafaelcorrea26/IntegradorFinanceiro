@@ -1,0 +1,30 @@
+unit uSettings;
+
+interface
+
+uses
+  uInterfacesHttp;
+
+type
+  TSettings = class;
+
+  TSettings = class(TInterfacedObject, iConfigure)
+  private
+  public
+    destructor Destroy; override;
+    constructor Create;
+
+  end;
+
+implementation
+
+constructor TSettings.Create;
+begin
+
+end;
+
+destructor TSettings.Destroy;
+begin
+end;
+
+end.

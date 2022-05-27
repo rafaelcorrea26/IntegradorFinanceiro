@@ -1,0 +1,396 @@
+unit uConnectionRest; // Classe que conecta na API
+
+interface
+
+uses
+  uInterfacesHttp,
+  REST.Types,
+  uTypeService,
+  REST.Client,
+  System.SysUtils,
+  uAuthentication,
+  uTypeAuth,
+  uSettings,
+  uFunctions,
+  Vcl.ExtCtrls,
+  System.JSON,
+  System.DateUtils,
+  uToken,
+  Vcl.Dialogs,
+  uMessages;
+
+type
+  TConnectionRest = class;
+
+  TConnectionRest = class(TInterfacedObject, iConfigure)
+  private
+    FRestClient: TRESTClient;
+    FRestResponse: TRESTResponse;
+    FRestRequest: TRESTRequest;
+
+  public
+    destructor Destroy; override;
+    constructor Create;
+
+    // Componentes REST
+    property RestClient: TRESTClient read FRestClient write FRestClient;
+    property RestResponse: TRESTResponse read FRestResponse write FRestResponse;
+    property RestRequest: TRESTRequest read FRestRequest write FRestRequest;
+
+    // Funções principais
+    procedure ConfigureRest(pMethodHTTP: TRESTRequestMethod; pService: TServiceAPI; pJson: String = '');
+    procedure UrlRestClient(pType: TServiceAPI);
+
+    // Funções Auxiliares
+    procedure ResetAllConfigsRequest;
+    procedure MontaTokenExistente;
+
+    // Funções GET
+    procedure GetAccessToken;
+    procedure GetConfiguracao;
+    function GetCodigoEChaveEmpresa(pCNPJ: String): boolean;
+
+  end;
+
+implementation
+
+procedure TConnectionRest.ConfigureRest(pMethodHTTP: TRESTRequestMethod; pService: TServiceAPI; pJson: String = '');
+begin
+  try
+    TSettings.Settings.Carrega;
+    ResetAllConfigsRequest;
+    UrlRestClient(pService);
+
+    MontaTokenExistente;
+    if trim(pJson) <> '' then
+    begin
+      FRestRequest.AddBody(pJson, ctAPPLICATION_JSON);
+    end;
+    FRestRequest.Method := pMethodHTTP;
+    FRestRequest.Execute;
+
+  Except
+    on E: Exception do
+    begin
+      tfunctions.CreateFileTxtLog(pJson, 'jsoncomexception');
+      tfunctions.CreateFileTxtLog(FRestResponse.Content, 'responsecomexception');
+
+      if TSettings.Settings.UtilizaCP then
+      begin
+        TSettings.Settings.TimerCP.Enabled := false;
+        TSettings.Settings.TimerCP.Enabled := true;
+      end;
+
+      if TSettings.Settings.UtilizaCR then
+      begin
+
+        TSettings.Settings.TimerCR.Enabled := false;
+        TSettings.Settings.TimerCR.Enabled := true;
+      end;
+
+      TSettings.Settings.TimerSt.Enabled := false;
+      TSettings.Settings.TimerSt.Enabled := true;
+    end;
+  end;
+end;
+
+constructor TConnectionRest.Create;
+begin
+  FRestClient := TRESTClient.Create('');
+  FRestRequest := TRESTRequest.Create(nil);
+  FRestResponse := TRESTResponse.Create(nil);
+
+end;
+
+destructor TConnectionRest.Destroy;
+begin
+  FRestClient.Free;
+  FRestRequest.Free;
+  FRestResponse.Free;
+end;
+
+procedure TConnectionRest.GetAccessToken; // Função que pega token na API
+VAR
+  lTamanho: integer;
+  lObjectJson: TJSONObject;
+  lObjectJsonArray: TJSONArray;
+  lNovoToken: boolean;
+  lAccess: string;
+  lAccessDate: TDateTime;
+begin
+
+  try
+    TSettings.Settings.Carrega;
+    ResetAllConfigsRequest;
+    UrlRestClient(tPostToken);
+    FRestRequest.AddParameter('email', TSettings.Settings.Login);
+    FRestRequest.AddParameter('senha', TSettings.Settings.Password);
+    FRestRequest.Method := rmPOST;
+    FRestRequest.Execute;
+
+    if (tfunctions.LengthString(IntToStr(FRestResponse.StatusCode), 1)) = '2' then
+    begin
+      if not(TJSONObject.ParseJSONValue(FRestResponse.Content).Null) then
+      begin
+        lObjectJson := TJSONObject.ParseJSONValue(FRestResponse.Content) as TJSONObject;
+
+        if lObjectJson.GetValue<String>('access_token') <> '' then
+        begin
+          lAccess := lObjectJson.GetValue<string>('access_token');
+        end;
+
+        if lObjectJson.GetValue<String>('expires_in') <> '' then
+        begin
+          lAccessDate := IncMinute(now, lObjectJson.GetValue<integer>('expires_in'));
+        end;
+
+        TToken.SaveToken(lAccess, lAccessDate);
+      end;
+    end;
+  Except
+    on E: Exception do
+    begin
+      tfunctions.CreateFileTxtLog(FRestResponse.Content, 'responsecomexception');
+    end;
+  end;
+end;
+
+function TConnectionRest.GetCodigoEChaveEmpresa(pCNPJ: string): boolean; // Busca e salva codigo e chave da API
+VAR
+  lTamanho: integer;
+  lObjectJson: TJSONObject;
+  lObjectJsonArray: TJSONArray;
+  lNovoToken: boolean;
+  lChave, lCodigo: string;
+  lAccessDate: TDateTime;
+begin
+  try
+    result := false;
+    TSettings.Settings.Carrega;
+    ResetAllConfigsRequest;
+    FRestClient.BaseURL := TSettings.Settings.Url + '/filiais/' + pCNPJ;
+    MontaTokenExistente;
+    FRestRequest.Method := rmGET;
+    FRestRequest.Execute;
+
+    if FRestResponse.StatusCode = 401 then
+    begin
+      GetAccessToken;
+      TSettings.Settings.Carrega;
+      ResetAllConfigsRequest;
+      FRestClient.BaseURL := TSettings.Settings.Url + '/filiais/' + pCNPJ;
+      MontaTokenExistente;
+      FRestRequest.Method := rmGET;
+      FRestRequest.Execute;
+    end;
+
+    if (tfunctions.LengthString(IntToStr(FRestResponse.StatusCode), 1)) = '2' then
+    begin
+      if not(TJSONObject.ParseJSONValue(FRestResponse.Content).Null) then
+      begin
+        lObjectJson := TJSONObject.ParseJSONValue(FRestResponse.Content) as TJSONObject;
+        lObjectJson := lObjectJson.GetValue<TJSONObject>('filial') as TJSONObject;
+
+        if tfunctions.ColumnExists('chave', lObjectJson.ToString) and (lObjectJson.GetValue<String>('chave') <> '') then
+        begin
+          lChave := lObjectJson.GetValue<String>('chave');
+        end;
+
+        if tfunctions.ColumnExists('cod_empresa_local', lObjectJson.ToString) and
+          (lObjectJson.GetValue<String>('cod_empresa_local') <> '') then
+        begin
+
+          lCodigo := lObjectJson.GetValue<String>('cod_empresa_local');
+        end;
+
+        tfunctions.GravaCodigoEChaveEmpresa(pCNPJ, lCodigo, lChave);
+        result := true;
+      end;
+    end;
+  Except
+    on E: Exception do
+    begin
+      tfunctions.CreateFileTxtLog(FRestResponse.Content, 'responsecomexception');
+    end;
+  end;
+
+end;
+
+procedure TConnectionRest.GetConfiguracao; // Busca e alimenta configuração
+VAR
+  lTamanho: integer;
+  lObjectJson: TJSONObject;
+  lObjectJsonArray: TJSONArray;
+  lNovoToken: boolean;
+  lAccess: string;
+  lAccessDate: TDateTime;
+begin
+  try
+    TSettings.Settings.Carrega;
+    TSettings.Settings.ChaveEmpresa := tfunctions.RetornaChavePelaConfig2000;
+    ResetAllConfigsRequest;
+    UrlRestClient(tgetconfig);
+    MontaTokenExistente;
+    FRestRequest.Method := rmGET;
+    FRestRequest.Execute;
+
+    if FRestResponse.StatusCode = 401 then
+    begin
+      GetAccessToken;
+      TSettings.Settings.Carrega;
+      ResetAllConfigsRequest;
+      UrlRestClient(tgetconfig);
+      MontaTokenExistente;
+      FRestRequest.Method := rmGET;
+      FRestRequest.Execute;
+    end;
+
+    if (tfunctions.LengthString(IntToStr(FRestResponse.StatusCode), 1)) = '2' then
+    begin
+      if not(TJSONObject.ParseJSONValue(FRestResponse.Content).Null) then
+      begin
+        lObjectJson := TJSONObject.ParseJSONValue(FRestResponse.Content) as TJSONObject;
+        lObjectJson := lObjectJson.GetValue<TJSONObject>('filial') as TJSONObject;
+
+        if tfunctions.ColumnExists('chave', lObjectJson.ToString) and (lObjectJson.GetValue<String>('chave') <> '') then
+        begin
+          TSettings.Settings.ChaveEmpresa := lObjectJson.GetValue<String>('chave');
+        end;
+        if tfunctions.ColumnExists('cp', lObjectJson.ToString) and (lObjectJson.GetValue<String>('cp') <> '') then
+        begin
+          TSettings.Settings.UtilizaCP := lObjectJson.GetValue<boolean>('cp');
+        end;
+
+        if tfunctions.ColumnExists('cr', lObjectJson.ToString) and (lObjectJson.GetValue<String>('cr') <> '') then
+        begin
+          TSettings.Settings.UtilizaCR := lObjectJson.GetValue<boolean>('cr');
+        end;
+
+        if tfunctions.ColumnExists('intervalo_envio_cp', lObjectJson.ToString) and
+          (lObjectJson.GetValue<String>('intervalo_envio_cp') <> '') then
+        begin
+          TSettings.Settings.IntervaloEnvioCP := lObjectJson.GetValue<integer>('intervalo_envio_cp');
+        end;
+
+        if tfunctions.ColumnExists('intervalo_envio_cr', lObjectJson.ToString) and
+          (lObjectJson.GetValue<String>('intervalo_envio_cr') <> '') then
+        begin
+          TSettings.Settings.IntervaloEnvioCR := lObjectJson.GetValue<integer>('intervalo_envio_cr');
+        end;
+
+        if tfunctions.ColumnExists('empresa', lObjectJson.ToString) then
+        begin
+          lObjectJson := lObjectJson.GetValue<TJSONObject>('empresa') as TJSONObject;
+          TSettings.Settings.LiberadoUso := lObjectJson.GetValue<boolean>('ativo');
+        end;
+
+        TSettings.Settings.AlterarRecebidoAPI;
+      end;
+    end;
+  Except
+    on E: Exception do
+    begin
+      tfunctions.CreateFileTxtLog(FRestResponse.Content, 'responsecomexception');
+
+      if TSettings.Settings.UtilizaCP then
+      begin
+        TSettings.Settings.TimerCP.Enabled := false;
+        TSettings.Settings.TimerCP.Enabled := true;
+      end;
+
+      if TSettings.Settings.UtilizaCR then
+      begin
+
+        TSettings.Settings.TimerCR.Enabled := false;
+        TSettings.Settings.TimerCR.Enabled := true;
+      end;
+
+      TSettings.Settings.TimerSt.Enabled := false;
+      TSettings.Settings.TimerSt.Enabled := true;
+    end;
+  end;
+end;
+
+procedure TConnectionRest.MontaTokenExistente; // Monta tipo token
+begin
+  if TSettings.Settings.Access_Token <> EmptyStr then
+  begin
+    TAuthentication.AuthBearer(FRestRequest);
+  end
+  else
+  begin
+    GetAccessToken;
+    TAuthentication.AuthBearer(FRestRequest);
+  end;
+end;
+
+procedure TConnectionRest.ResetAllConfigsRequest; // Função inicial
+begin
+  FRestClient.ResetToDefaults;
+  FRestClient.BaseURL := EmptyStr;
+  FRestResponse.ResetToDefaults;
+  FRestResponse.ContentEncoding := 'utf8';
+  FRestRequest.ResetToDefaults;
+  FRestRequest.Client := FRestClient;
+  FRestRequest.ClearBody;
+  FRestRequest.Response := FRestResponse;
+  FRestRequest.Params.Clear;
+end;
+
+procedure TConnectionRest.UrlRestClient(pType: TServiceAPI);
+var
+  lDateTimeStart: string;
+begin
+  lDateTimeStart := TSettings.Settings.DataFormatada;
+  case pType of
+{$REGION 'Login'}
+    tPostToken:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/login';
+{$ENDREGION}
+{$REGION 'Configuração'}
+    tgetconfig:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/filiais/' + TSettings.Settings.ChaveEmpresa;
+{$ENDREGION}
+{$REGION 'CP'}
+    tGetCP:
+      begin
+        if TSettings.Settings.ChaveEmpresa <> EmptyStr then
+        begin
+          FRestClient.BaseURL := TSettings.Settings.Url + '/tp_cpagar/' + TSettings.Settings.ChaveEmpresa + '/?data=' +
+            lDateTimeStart;
+        end;
+      end;
+
+    tPostCP:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/tp_cpagar';
+
+    tPutCP:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/tp_cpagar';
+
+    tDeleteCP:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/tp_cpagar';
+
+{$ENDREGION}
+{$REGION 'CR'}
+    tGetCR:
+      begin
+        if TSettings.Settings.ChaveEmpresa <> EmptyStr then
+        begin
+          FRestClient.BaseURL := TSettings.Settings.Url + '/tp_creceber/' + TSettings.Settings.ChaveEmpresa + '/?data='
+            + lDateTimeStart;
+        end;
+      end;
+
+    tPostCR:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/tp_creceber';
+
+    tPutCR:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/tp_creceber';
+
+    tDeleteCR:
+      FRestClient.BaseURL := TSettings.Settings.Url + '/tp_creceber';
+{$ENDREGION}
+  end;
+end;
+
+end.

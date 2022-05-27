@@ -1,0 +1,67 @@
+unit uSettings;
+
+interface
+
+uses
+  uInterfacesHttp;
+
+type
+  TSettings = class;
+
+  TSettings = class(TInterfacedObject, iConfigure)
+  private
+    FUrl: String;
+    FLogin: String;
+    FPassword: String;
+    FKeyCompanny: string;
+    FMainCompany: Boolean;
+    FAllowToUse: Boolean;
+    FAutomaticSend: Boolean;
+    FConfigAutoSend: Boolean;
+    FIntervalSend: integer;
+    FAllowsUpdatingDateConfig: Boolean;
+    FCodeCompany: string;
+    FRefresh_Token: string;
+    FAccess_Token: string;
+    FRefresh_Token_Expires: TDateTime;
+    FAccess_Token_Expires: TDateTime;
+
+  public
+    destructor Destroy; override;
+    constructor Create;
+
+    property Url: String read FUrl write FUrl;
+    property Login: string read FLogin write FLogin;
+    property Password: string read FPassword write FPassword;
+
+    property KeyCompanny: string read FKeyCompanny write FKeyCompanny;
+    property MainCompany: Boolean read FMainCompany write FMainCompany;
+    property AllowToUse: Boolean read FAllowToUse write FAllowToUse;
+    property AutomaticSend: Boolean read FAutomaticSend write FAutomaticSend;
+    property ConfigAutoSend: Boolean read FConfigAutoSend write FConfigAutoSend;
+    property IntervalSend: integer read FIntervalSend write FIntervalSend;
+    property AllowsUpdatingDateConfig: Boolean read FAllowsUpdatingDateConfig write FAllowsUpdatingDateConfig;
+    property CodeCompany: string read FCodeCompany write FCodeCompany;
+
+    property Refresh_Token: string read FRefresh_Token write FRefresh_Token;
+    property Access_Token: string read FAccess_Token write FAccess_Token;
+    property Refresh_Token_Expires: TDateTime read FRefresh_Token_Expires write FRefresh_Token_Expires;
+    property Access_Token_Expires: TDateTime read FAccess_Token_Expires write FAccess_Token_Expires;
+
+  end;
+
+implementation
+
+constructor TSettings.Create;
+begin
+  Url := 'https://webmc.com.br/api_cpagar/public/api'; // 'http://192.168.1.121:8080/api'; //
+  Login := 'mcsistemas@mcsistemas.eti.br';
+  Password := '@mc2021!';
+
+end;
+
+destructor TSettings.Destroy;
+begin
+end;
+
+end.

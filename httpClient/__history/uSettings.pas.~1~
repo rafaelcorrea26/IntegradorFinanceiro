@@ -1,0 +1,37 @@
+unit uSettings;
+
+interface
+
+uses
+  uInterfacesHttp,
+  REST.Authenticator.Basic,
+  System.NetEncoding,
+  System.SysUtils,
+  REST.Client,
+  uTypeAuth;
+
+type
+  TConfigureAPI = class;
+
+  TConfigureAPI = class(TInterfacedObject, iConfigure)
+  private
+  public
+    destructor Destroy; override;
+    constructor Create;
+
+
+
+  end;
+
+implementation
+
+constructor TConfigureAPI.Create;
+begin
+
+end;
+
+destructor TConfigureAPI.Destroy;
+begin
+end;
+
+end.

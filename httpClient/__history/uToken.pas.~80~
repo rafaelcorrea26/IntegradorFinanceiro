@@ -1,0 +1,115 @@
+unit uToken;
+
+interface
+
+uses
+  uInterfacesHttp,
+  System.SysUtils,
+  uFunctions,
+  System.DateUtils,
+  System.JSON,
+  uQuery,
+  REST.Types,
+  uTypeService;
+
+type
+
+  TToken = class(TInterfacedObject, iToken)
+  private
+    class var FAccess: string;
+    class var FRefresh: string;
+    class var FAccessDateExp: TDateTime;
+    class var FRefreshDateExp: TDateTime;
+    class function SearchToken: Boolean;
+
+  public
+    class function AccessToken: string;
+    class function ValidityToken: Boolean;
+    class function SaveToken(pAccess: string; pAccessExpire: TDateTime): Boolean;
+
+  end;
+
+implementation
+
+{ TToken }
+
+class function TToken.AccessToken: string;
+begin
+  SearchToken;
+  result := FAccess;
+end;
+
+class function TToken.SaveToken(pAccess: string; pAccessExpire: TDateTime): Boolean;
+var
+  lQuery: TQuery;
+begin
+  lQuery := TQuery.Create(nil);
+  try
+    try
+      lQuery.Close;
+      lQuery.SQL.Clear;
+      lQuery.SQL.Add('  UPDATE OR INSERT INTO TBL_CONFIGURACAO_FIN(  ');
+      lQuery.SQL.Add('   ID                                          ');
+      lQuery.SQL.Add(' , ACCESS_TOKEN                                ');
+      lQuery.SQL.Add(' , ACCESS_TOKEN_EXPIRES                        ');
+      lQuery.SQL.Add(' ) VALUES(                                     ');
+      lQuery.SQL.Add('  :ID                                          ');
+      lQuery.SQL.Add(' ,:ACCESS_TOKEN                                ');
+      lQuery.SQL.Add(' ,:ACCESS_TOKEN_EXPIRES                        ');
+      lQuery.SQL.Add(' ) MATCHING (ID)                               ');
+      lQuery.ParamByName('access_token').AsString := pAccess;
+      lQuery.ParamByName('ACCESS_TOKEN_EXPIRES').AsDateTime := pAccessExpire;
+      lQuery.ParamByName('id').AsInteger := 1;
+      lQuery.ExecSQL;
+      lQuery.Connection.Commit;
+      result := true;
+    except
+      on E: Exception do
+      begin
+        result := false;
+      end;
+    end;
+  finally
+    lQuery.Free;
+  end;
+
+end;
+
+class function TToken.SearchToken: Boolean;
+var
+  lQuery: TQuery;
+begin
+  lQuery := TQuery.Create(nil);
+  try
+    lQuery.Close;
+    lQuery.SQL.Clear;
+    lQuery.SQL.Add(' SELECT ACCESS_TOKEN, ACCESS_TOKEN_EXPIRES FROM TBL_CONFIGURACAO_FIN ');
+    lQuery.SQL.Add(' WHERE ID = 1                                                        ');
+    lQuery.Open;
+    lQuery.FetchAll;
+
+    if lQuery.RecordCount > 0 then
+    begin
+      result := true;
+      FAccess := lQuery.FieldByName('ACCESS_TOKEN').AsString;
+      FAccessDateExp := lQuery.FieldByName('ACCESS_TOKEN_EXPIRES').AsDateTime;
+    end
+    else
+    begin
+      result := false;
+      FAccess := EmptyStr;
+      FAccessDateExp := 0;
+    end;
+
+  finally
+    lQuery.Free;
+  end;
+
+end;
+
+class function TToken.ValidityToken: Boolean;
+begin
+  result := FAccessDateExp > now;
+end;
+
+end.

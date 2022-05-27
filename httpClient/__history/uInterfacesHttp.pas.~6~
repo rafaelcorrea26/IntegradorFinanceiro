@@ -1,0 +1,22 @@
+unit uInterfacesHttp;
+
+interface
+
+uses
+  System.JSON,
+  REST.Client,
+  REST.Authenticator.Basic,
+  uTypeAuth;
+
+type
+  iAuth = interface
+    ['{6C05C047-F25F-48D9-B329-E87934B75737}']
+    procedure AuthenticationHTTP(pRestRequest: TRESTRequest; pAccess: String; TParameter: TParameter;
+      TNameAuth: TNameAuth); overload;
+    function AuthenticationHTTP(pUsername, pPassword: String): THTTPBasicAuthenticator; overload;
+    function Base64(pInput: String): string;
+  end;
+
+implementation
+
+end.

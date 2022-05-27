@@ -1,0 +1,11 @@
+unit uTypeAuth;
+
+interface
+
+type
+  TParameter = (TParameter, tHeader, tBody);
+  TNameAuth = (TBerear, taccess_token);
+
+implementation
+
+end.

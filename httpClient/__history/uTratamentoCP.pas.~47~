@@ -1,0 +1,224 @@
+unit uTratamentoCP;
+
+interface
+
+uses
+  uInterfacesHttp, uQuery, uFunctions, System.DateUtils, uMessages,
+  uFornecedor, System.JSON, System.SysUtils, uConnectionRest, REST.Types,
+  uTypeService;
+
+type
+
+  TTratamentoCP = class;
+
+  TTratamentoCP = class(TInterfacedObject, iTratamento)
+  private
+    FStatusCode: Integer;
+    FContent: string;
+    FFornec: string;
+    FTotalPosted: Integer;
+    FTotalPut: Integer;
+    FTotalGet: Integer;
+    FTotalDelete: Integer;
+    FTotalPutError: Integer;
+    FTotalPostedError: Integer;
+  public
+    property StatusCode: Integer read FStatusCode write FStatusCode;
+    property Content: string read FContent write FContent;
+    property Fornec: string read FFornec write FFornec;
+    property TotalPosted: Integer read FTotalPosted write FTotalPosted;
+    property TotalPut: Integer read FTotalPut write FTotalPut;
+    property TotalGet: Integer read FTotalGet write FTotalGet;
+    property TotalDelete: Integer read FTotalDelete write FTotalDelete;
+    property TotalPutError: Integer read FTotalPutError write FTotalPutError;
+    property TotalPostedError: Integer read FTotalPostedError write FTotalPostedError;
+
+    function SendOneFN: boolean;
+    function TratamentoRetornoHttpEnvio: string;
+    function UpdateFNforResend: boolean;
+  end;
+
+implementation
+
+function TTratamentoCP.SendOneFN: boolean;
+var
+  lFN: Tfornecedor;
+  lObjectJson, lJsonRetornoInsert: TJSONObject;
+  lObjectJsonArray: TJSONArray;
+  i: Integer;
+  lJson, lIDFN, ltxtNaoEnviados: string;
+  lExisteFN, lExisteFNUpdate: boolean;
+  lMensagemErro, lCodigoFN: string;
+
+  function TratamentoRetornoHttpEnvio: boolean;
+  begin
+    result := True;
+
+    if (TFunctions.LengthString(IntToStr(FStatusCode), 1)) = '2' then
+    begin
+      lIDFN := EmptyStr;
+      FTotalPosted := FTotalPosted + 1;
+      UpdateFNforResend;
+    end
+    else
+    begin
+      lMensagemErro := EmptyStr;
+      result := false;
+
+      if FStatusCode = 409 then
+      begin
+        UpdateFNforResend;
+      end;
+
+      lMensagemErro := 'Fornecedor: ' + lFN.Nome + ' - Não Alterado - Motivo/Erro: ' + IntToStr(FStatusCode) + ' - '
+        + FContent;
+      TFunctions.CreateFileTxtLog(lMensagemErro, 'LogFN_Nao_Alterado')
+
+    end;
+  end;
+
+  function SendPost: boolean;
+  var
+    lQuery: TQuery;
+    lHTTP: TConnectionRest;
+  begin
+    lQuery := TQuery.Create(nil);
+    lFN := Tfornecedor.Create;
+    lHTTP := TConnectionRest.Create;
+    try
+
+      lJson := EmptyStr;
+      lIDFN := EmptyStr;
+      lCodigoFN := EmptyStr;
+
+      lCodigoFN := lQuery.FieldByName('MC02CODIGO').AsString;
+      lFN.cnpj := lQuery.FieldByName('MC02CGC').AsString;
+      lFN.cpf := lQuery.FieldByName('MC02CPF').AsString;
+      lFN.Nome := lQuery.FieldByName('MC02NOME').AsString;
+      lFN.fantasia := lQuery.FieldByName('MC02FANTASIA').AsString;
+      lFN.tipo := lQuery.FieldByName('MC02FISJUR').AsString;
+      lFN.situacao := lQuery.FieldByName('MC02ATIINATIVO').AsString;
+      lFN.endereco := lQuery.FieldByName('MC02ENDERECO').AsString;
+      lFN.endereco_numero := lQuery.FieldByName('MC02_NR').AsString;
+      lFN.endereco_bairro := lQuery.FieldByName('MC02BAIRRO').AsString;
+      lFN.endereco_cidade := lQuery.FieldByName('MC02CIDADE').AsString;
+      lFN.endereco_uf := lQuery.FieldByName('MC02UF').AsString;
+      lFN.endereco_cep := lQuery.FieldByName('MC02CEP').AsString;
+      lFN.codigo_cidade_sefaz := lQuery.FieldByName('MC02_COD_SEFAZ').AsString;
+      lFN.telefone := lQuery.FieldByName('MC02FONE').AsString;
+      lFN.celular := lQuery.FieldByName('MC02CELULAR').AsString;;
+      lFN.email := lQuery.FieldByName('MC02EMAIL').AsString;
+      lFN.cart_identidade := lQuery.FieldByName('MC02CI').AsString;
+      lFN.insc_estadual := lQuery.FieldByName('MC02IE').AsString;
+      lFN.obs1 := lQuery.FieldByName('MC02_OBS1').AsString;
+      lFN.obs2 := lQuery.FieldByName('MC02_OBS2').AsString;
+      lFN.atualizar_custos := lQuery.FieldByName('MC02_ALTERAR_CUSTOS').AsString;
+      lFN.gerar_rel_sped := lQuery.FieldByName('MC02_SPED_SN').AsString;
+      lFN.regime_tributario := lQuery.FieldByName('MC02REGIME').AsInteger;
+      lFN.crt := lQuery.FieldByName('MC02CRT').AsInteger;
+      lFN.cnae := lQuery.FieldByName('MC02CNAE').AsString;
+      lFN.representante_nome := lQuery.FieldByName('MC02CONTATO').AsString;
+      lFN.representante_telefone := lQuery.FieldByName('MC02FONE_CONTATO').AsString;
+      lFN.representante_email := lQuery.FieldByName('MC02EMAIL_CONTATO').AsString;
+      lJson := lFN.ToJson.ToString; // ShowMessage(lJson);
+
+      if trim(lJson) <> '' then
+      begin
+        lHTTP.ConfigureRest(rmPOST, tPostFN, lJson);
+        TratamentoRetornoHttpEnvio;
+      end;
+
+    finally
+      lQuery.Free;
+      lFN.Free;
+      lHTTP.Free;
+    end;
+
+  end;
+
+begin
+  result := True;
+  // ConfigAPI;
+  if TFunctions.CheckItsOkConfigAPI then
+  begin
+    lFN := Tfornecedor.Create;
+    try
+     // lFN.CarregaLoadQryOneFNInsert(pCodeFN);
+
+     // if lFN.Query.RecordCount > 0 then
+      begin
+        SendPost;
+      end;
+
+    finally
+      lFN.Free;
+    end;
+  end
+  else
+  begin
+    TMessages.Messages :=
+      ('Problemas na Configuração, entre em contato com a MC Sistemas para dar continuidade no uso.');
+  end;
+end;
+
+function TTratamentoCP.TratamentoRetornoHttpEnvio: string;
+begin
+  // if FStatusCode = 428 then
+  // begin
+  // UpdateFNforResend(FQueryInsert.FieldByName('AN08FORNEC').AsString);
+  // SendOneFN(FQueryInsert.FieldByName('AN08FORNEC').AsString);
+  // PostCPLoaded(lJson);
+  // end;
+  //
+  // if (LengthString(IntToStr(FRestResponse.StatusCode), 1)) = '2' then
+  // begin
+  // lIDFN := '';
+  // FTotalCPPosted := FTotalCPPosted + 1;
+  // UpdateContaPagarSend(lTitulo, lLastDateSinc);
+  // UpdateCPTitleEmp(lTitulo);
+  // pmmoGet.Lines.Add('POST - Contas Pagar: ' + lTitulo + ' - Enviado - ' + DateTimeToStr(DateServer));
+  // end
+  // else if FRestResponse.StatusCode = 409 then
+  // begin
+  // UpdateContaPagarSend(lTitulo);
+  // pmmoGet.Lines.Add('POST - Contas Pagar: ' + lTitulo + ' - Ja existia na API, o status foi trocado para enviado - ' +
+  // DateTimeToStr(DateServer));
+  // end
+  // else
+  // begin
+  // lMensagemErro := EmptyStr;
+  // FAllowsUpdatingDateConfig := false;
+  // FTotalCPError := FTotalCPError + 1;
+  // FTotalCPPostedError := FTotalCPPostedError + 1;
+  //
+  // Tmessages.Messages := 'POST - Contas Pagar: ' + lTitulo + ' - ' + lCP.emissao + ' - Não Enviado - Motivo/Erro: ' +
+  // IntToStr(FRestResponse.StatusCode) + ' - ' + FRestResponse.Content + ' - ' + DateTimeToStr(DateServer);
+  // pmmoError.Lines.Add(Tmessages.Messages);
+  // CreateFileTxtLog(lMensagemErro, 'log_cp_nao_enviados');
+  // end;
+end;
+
+procedure TTratamentoCP.UpdateFNforResend;
+var
+  lQuery: TQuery;
+begin
+  lQuery := TQuery.Create(nil);
+  try
+    lQuery.Close;
+    lQuery.SQL.Clear;
+    lQuery.SQL.Add(' UPDATE OR INSERT INTO TBL_INTEG_FN (       ');
+    lQuery.SQL.Add(' CODIGO,EXCLUIDO,ENVIADO,DATA_ATUALIZACAO)  ');
+    lQuery.SQL.Add(' VALUES (                                   ');
+    lQuery.SQL.Add(' :CODIGO,''N'' ,''N'',:DATA_ATUALIZACAO)    ');
+    lQuery.SQL.Add(' MATCHING (CODIGO);                         ');
+    lQuery.ParamByName('CODIGO').AsString := FFornec;
+    lQuery.ParamByName('DATA_ATUALIZACAO').AsDateTime := IncMinute(TFunctions.ReturnsLastDateSync, 1);
+    lQuery.ExecSQL;
+    lQuery.Connection.Commit;
+  finally
+    lQuery.Free;
+  end;
+
+end;
+
+end.
