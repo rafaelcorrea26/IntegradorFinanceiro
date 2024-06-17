@@ -1,4 +1,4 @@
-unit uFunctions; // classe geral de funÁıes
+unit uFunctions; // classe geral de fun√ß√µes
 
 interface
 
@@ -122,7 +122,7 @@ begin
     REG.OpenKey('Software\Microsoft\Windows\CurrentVersion\Run\', true);
     REG.WriteString(pProgram, ParamStr(0));
     REG.CloseKey;
-    ShowMessage('Programa adicionado na inicializaÁ„o do Windows com sucesso!');
+    ShowMessage('Programa adicionado na inicializa√ß√£o do Windows com sucesso!');
   finally
     REG.Free;
   end;
@@ -131,9 +131,9 @@ end;
 class function TFunctions.RemoveCaracteres(aTexto: string): string;
 const
   // Lista de Caracteres Extras
-  xCarExt: array [1 .. 55] of string = ('<', '>', '!', '@', '#', '$', '%', '®', '&', '*', '(', ')', '_', '+', '=', '{',
-    '}', '[', ']', '?', ';', ':', ',', '|', '*', '"', '~', '^', '¥', '`', '®', 'Ê', '∆', '¯', '£', 'ÿ', 'É', '™', '∫',
-    'ø', 'Æ', 'Ω', 'º', 'ﬂ', 'µ', '˛', '˝', '›', '˜', '◊', 'Ä', '-', '\', '/', '.');
+  xCarExt: array [1 .. 55] of string = ('<', '>', '!', '@', '#', '$', '%', '¬®', '&', '*', '(', ')', '_', '+', '=', '{',
+    '}', '[', ']', '?', ';', ':', ',', '|', '*', '"', '~', '^', '¬¥', '`', '¬®', '√¶', '√Ü', '√∏', '¬£', '√ò', '∆í', '¬™', '¬∫',
+    '¬ø', '¬Æ', '¬Ω', '¬º', '√ü', '¬µ', '√æ', '√Ω', '√ù', '√∑', '√ó', '‚Ç¨', '-', '\', '/', '.');
 var
   xTexto: string;
   i: Integer;
@@ -151,9 +151,9 @@ end;
 
 class function TFunctions.RemoveCharac(aText, aOld, aNew: String; aRemoveTrim: Boolean): string;
 const
-  xCarExt: array [1 .. 55] of string = ('<', '>', '!', '@', '#', '$', '%', '®', '&', '*', '(', ')', '_', '+', '=', '{',
-    '}', '[', ']', '?', ';', ':', ',', '|', '*', '"', '~', '^', '¥', '`', '®', 'Ê', '∆', '¯', '£', 'ÿ', 'É', '™', '∫',
-    'ø', 'Æ', 'Ω', 'º', 'ﬂ', 'µ', '˛', '˝', '›', '˜', '◊', 'Ä', '-', '\', '/', '.');
+  xCarExt: array [1 .. 55] of string = ('<', '>', '!', '@', '#', '$', '%', '¬®', '&', '*', '(', ')', '_', '+', '=', '{',
+    '}', '[', ']', '?', ';', ':', ',', '|', '*', '"', '~', '^', '¬¥', '`', '¬®', '√¶', '√Ü', '√∏', '¬£', '√ò', '∆í', '¬™', '¬∫',
+    '¬ø', '¬Æ', '¬Ω', '¬º', '√ü', '¬µ', '√æ', '√Ω', '√ù', '√∑', '√ó', '‚Ç¨', '-', '\', '/', '.');
 var
   xTexto: string;
   i: Integer;
@@ -210,13 +210,13 @@ begin
   try
     lQuery.Close;
     lQuery.SQL.Clear;
-    lQuery.SQL.Add(' UPDATE MC27PROP  SET           ');
-    lQuery.SQL.Add('  AC27_CHAVE = :AC27_CHAVE      ');
-    lQuery.SQL.Add(' ,AN27CODI_INT = :AN27CODI_INT  ');
-    lQuery.SQL.Add(' WHERE AC27CNPJ = :AC27CNPJ     ');
-    lQuery.ParamByName('AC27_CHAVE').AsSTRING := pChave;
-    lQuery.ParamByName('AC27CNPJ').AsSTRING := pCNPJ;
-    lQuery.ParamByName('AN27CODI_INT').AsSTRING := pCodigoEmpresa;
+    lQuery.SQL.Add(' UPDATE PROP  SET           ');
+    lQuery.SQL.Add('  CHAVE = :CHAVE      ');
+    lQuery.SQL.Add(' ,CODI_INT = :CODI_INT  ');
+    lQuery.SQL.Add(' WHERE CNPJ = :CNPJ     ');
+    lQuery.ParamByName('CHAVE').AsSTRING := pChave;
+    lQuery.ParamByName('CNPJ').AsSTRING := pCNPJ;
+    lQuery.ParamByName('CODI_INT').AsSTRING := pCodigoEmpresa;
     lQuery.ExecSQL;
     lQuery.Connection.Commit;
   finally
@@ -390,14 +390,14 @@ begin
 
       lQuery.Close;
       lQuery.SQL.Clear;
-      lQuery.SQL.Add(' SELECT * FROM MC27PROP              ');
-      lQuery.SQL.Add(' WHERE AN27CODI_INT = :AN27CODI_INT  ');
-      lQuery.ParamByName('AN27CODI_INT').AsSTRING := pCodigoEmp;
+      lQuery.SQL.Add(' SELECT * FROM PROP              ');
+      lQuery.SQL.Add(' WHERE CODI_INT = :CODI_INT  ');
+      lQuery.ParamByName('CODI_INT').AsSTRING := pCodigoEmp;
       lQuery.Open;
 
       if (lQuery.recordcount) > 0 then
       begin
-        result := lQuery.FieldByName('AC27_CHAVE').AsSTRING;
+        result := lQuery.FieldByName('CHAVE').AsSTRING;
       end;
 
     finally
@@ -415,7 +415,7 @@ begin
   try
     lQuery.Close;
     lQuery.SQL.Clear;
-    lQuery.SQL.Add(' SELECT * FROM MCCONFIG2000      ');
+    lQuery.SQL.Add(' SELECT * FROM CONFIG      ');
     lQuery.Open;
     result := lQuery.FieldByName('MC_CHAVE_REGISTRO').AsSTRING;
   finally
@@ -443,13 +443,13 @@ begin
       lChave := lQuery.FieldByName('CHAVE_EMPRESA').AsSTRING;
       lQuery.Close;
       lQuery.SQL.Clear;
-      lQuery.SQL.Add('  SELECT AN27CODI_INT FROM MC27PROP    ');
-      lQuery.SQL.Add('  where   AC27_CHAVE = :AC27_CHAVE     ');
-      lQuery.ParamByName('AC27_CHAVE').AsSTRING := lChave;
+      lQuery.SQL.Add('  SELECT CODI_INT FROM PROP    ');
+      lQuery.SQL.Add('  where   CHAVE = :CHAVE     ');
+      lQuery.ParamByName('CHAVE').AsSTRING := lChave;
       lQuery.Open;
       lQuery.FetchAll;
 
-      result := lQuery.FieldByName('AN27CODI_INT').AsSTRING;
+      result := lQuery.FieldByName('CODI_INT').AsSTRING;
     end;
   finally
     lQuery.Free;
@@ -474,16 +474,16 @@ begin
 
     lQuery.Close;
     lQuery.SQL.Clear;
-    lQuery.SQL.Add(' SELECT AC09DUP from MC09CREC ');
-    lQuery.SQL.Add(' where AC09DUP = :AC09DUP     ');
-    lQuery.ParamByName('AC09DUP').AsSTRING := pDuplicata;
+    lQuery.SQL.Add(' SELECT DUP from CREC ');
+    lQuery.SQL.Add(' where DUP = :DUP     ');
+    lQuery.ParamByName('DUP').AsSTRING := pDuplicata;
     lQuery.Open;
 
     if lQuery.recordcount > 0 then
     begin
-      if (Copy(lQuery.FieldByName('AC09DUP').AsSTRING, 1, 3) = 'INT') then
+      if (Copy(lQuery.FieldByName('DUP').AsSTRING, 1, 3) = 'INT') then
       begin
-        lNovaChave := RetornaChaveEmpresa(Copy(lQuery.FieldByName('AC09DUP').AsSTRING, 4, 1));
+        lNovaChave := RetornaChaveEmpresa(Copy(lQuery.FieldByName('DUP').AsSTRING, 4, 1));
       end
     end;
 
@@ -516,16 +516,16 @@ begin
 
     lQuery.Close;
     lQuery.SQL.Clear;
-    lQuery.SQL.Add(' SELECT AC08TIT from mc08cpag ');
-    lQuery.SQL.Add(' where AC08TIT = :AC08TIT     ');
-    lQuery.ParamByName('AC08TIT').AsSTRING := pTitulo;
+    lQuery.SQL.Add(' SELECT TIT from CPAG ');
+    lQuery.SQL.Add(' where TIT = :TIT     ');
+    lQuery.ParamByName('TIT').AsSTRING := pTitulo;
     lQuery.Open;
 
     if lQuery.recordcount > 0 then
     begin
-      if (Copy(lQuery.FieldByName('AC08TIT').AsSTRING, 1, 3) = 'INT') then
+      if (Copy(lQuery.FieldByName('TIT').AsSTRING, 1, 3) = 'INT') then
       begin
-        lNovaChave := RetornaChaveEmpresa(Copy(lQuery.FieldByName('AC08TIT').AsSTRING, 4, 1));
+        lNovaChave := RetornaChaveEmpresa(Copy(lQuery.FieldByName('TIT').AsSTRING, 4, 1));
       end
     end;
 
@@ -554,12 +554,12 @@ begin
     try
       lQuery.Close;
       lQuery.SQL.Clear;
-      lQuery.SQL.Add(' SELECT * FROM MC27PROP      ');
-      lQuery.SQL.Add(' WHERE AN27CODI_INT = :AN27CODI_INT  ');
-      lQuery.ParamByName('AN27CODI_INT').AsSTRING := lCodigo;
+      lQuery.SQL.Add(' SELECT * FROM PROP      ');
+      lQuery.SQL.Add(' WHERE CODI_INT = :CODI_INT  ');
+      lQuery.ParamByName('CODI_INT').AsSTRING := lCodigo;
       lQuery.Open;
 
-      result := 'Empresa: ' + lQuery.FieldByName('AN27CODI').AsSTRING + ' - ' + lQuery.FieldByName('AC27NOME').AsSTRING;
+      result := 'Empresa: ' + lQuery.FieldByName('CODI').AsSTRING + ' - ' + lQuery.FieldByName('NOME').AsSTRING;
     finally
       lQuery.Free;
     end;
@@ -600,8 +600,8 @@ begin
     lQuery := TQuery.Create(nil);
     lQuery.Close;
     lQuery.SQL.Clear;
-    lQuery.SQL.Add('SELECT * FROM MC27PROP                                                        ');
-    lQuery.SQL.Add('where ((AC27_CHAVE is null) or (AC27_CHAVE = '''') or (AN27CODI_INT is null)) ');
+    lQuery.SQL.Add('SELECT * FROM PROP                                                        ');
+    lQuery.SQL.Add('where ((CHAVE is null) or (CHAVE = '''') or (CODI_INT is null)) ');
     lQuery.Open;
     result := lQuery.recordcount = 0;
   finally
@@ -749,11 +749,11 @@ begin
   try
     lQuery.Close;
     lQuery.SQL.Clear;
-    lQuery.SQL.Add(' update MC08CPAG                               ');
-    lQuery.SQL.Add(' set AC08EMP_TIT = :AC08EMP_TIT                ');
-    lQuery.SQL.Add(' WHERE AC08TIT = :AC08TIT                      ');
-    lQuery.ParamByName('AC08TIT').AsSTRING := pTitulo;
-    lQuery.ParamByName('AC08EMP_TIT').AsSTRING := RetornaCodigoEmpresa + '-' + pTitulo;
+    lQuery.SQL.Add(' update CPAG                               ');
+    lQuery.SQL.Add(' set EMP_TIT = :EMP_TIT                ');
+    lQuery.SQL.Add(' WHERE TIT = :TIT                      ');
+    lQuery.ParamByName('TIT').AsSTRING := pTitulo;
+    lQuery.ParamByName('EMP_TIT').AsSTRING := RetornaCodigoEmpresa + '-' + pTitulo;
     lQuery.ExecSQL;
     lQuery.Connection.Commit;
   finally
@@ -770,11 +770,11 @@ begin
   try
     lQuery.Close;
     lQuery.SQL.Clear;
-    lQuery.SQL.Add(' update MC09CREC                               ');
-    lQuery.SQL.Add(' set AC09EMP_DUP = :AC09EMP_DUP                ');
-    lQuery.SQL.Add(' WHERE AC09DUP = :AC09DUP                      ');
-    lQuery.ParamByName('AC09DUP').AsSTRING := pDuplicata;
-    lQuery.ParamByName('AC09EMP_DUP').AsSTRING := RetornaCodigoEmpresa + '-' + pDuplicata;
+    lQuery.SQL.Add(' update CREC                               ');
+    lQuery.SQL.Add(' set EMP_DUP = :EMP_DUP                ');
+    lQuery.SQL.Add(' WHERE DUP = :DUP                      ');
+    lQuery.ParamByName('DUP').AsSTRING := pDuplicata;
+    lQuery.ParamByName('EMP_DUP').AsSTRING := RetornaCodigoEmpresa + '-' + pDuplicata;
     lQuery.ExecSQL;
     lQuery.Connection.Commit;
   finally
