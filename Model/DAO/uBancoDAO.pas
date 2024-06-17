@@ -39,20 +39,20 @@ begin
     lQuery.Close;
     lQuery.SQL.Clear;;
     lQuery.SQL.add(' UPDATE  BANCO SET                              ');
-    lQuery.SQL.add('   AC09_CODIGO = :AC09_CODIGO                        ');
-    lQuery.SQL.add(' , AC09_BANCO = :AC09_BANCO                          ');
-    lQuery.SQL.add(' , AC09_ARQUIVO = :AC09_ARQUIVO                      ');
-    lQuery.SQL.add(' , AC09_LOCAL = :AC09_LOCAL                          ');
-    lQuery.SQL.add(' , AN09_NARQUIVO = :AN09_NARQUIVO                    ');
-    lQuery.SQL.add(' , AN09_DIGITO_BANCO = :AN09_DIGITO_BANCO            ');
-    lQuery.SQL.add(' , AC09_DTHORA_ARQUIVO_SN = :AC09_DTHORA_ARQUIVO_SN  ');
-    lQuery.parambyname('AC09_CODIGO').asstring := pBanco.Codigo;
-    lQuery.parambyname('AC09_BANCO').asstring := pBanco.banco;
-    lQuery.parambyname('AC09_ARQUIVO').asstring := pBanco.arquivo;
-    lQuery.parambyname('AC09_LOCAL').asstring := pBanco.local;
-    lQuery.parambyname('AN09_NARQUIVO').AsInteger := StrToIntDef(pBanco.numero_arquivo, 0);
-    lQuery.parambyname('AN09_DIGITO_BANCO').AsInteger := StrToIntDef(pBanco.digito_banco, 0);
-    lQuery.parambyname('AC09_DTHORA_ARQUIVO_SN').asstring := pBanco.data_hora_arquivo_sn;
+    lQuery.SQL.add('   CODIGO = :CODIGO                        ');
+    lQuery.SQL.add(' , BANCO = :BANCO                          ');
+    lQuery.SQL.add(' , ARQUIVO = :ARQUIVO                      ');
+    lQuery.SQL.add(' , LOCAL = :LOCAL                          ');
+    lQuery.SQL.add(' , NARQUIVO = :NARQUIVO                    ');
+    lQuery.SQL.add(' , DIGITO_BANCO = :DIGITO_BANCO            ');
+    lQuery.SQL.add(' , DTHORA_ARQUIVO_SN = :DTHORA_ARQUIVO_SN  ');
+    lQuery.parambyname('CODIGO').asstring := pBanco.Codigo;
+    lQuery.parambyname('BANCO').asstring := pBanco.banco;
+    lQuery.parambyname('ARQUIVO').asstring := pBanco.arquivo;
+    lQuery.parambyname('LOCAL').asstring := pBanco.local;
+    lQuery.parambyname('NARQUIVO').AsInteger := StrToIntDef(pBanco.numero_arquivo, 0);
+    lQuery.parambyname('DIGITO_BANCO').AsInteger := StrToIntDef(pBanco.digito_banco, 0);
+    lQuery.parambyname('DTHORA_ARQUIVO_SN').asstring := pBanco.data_hora_arquivo_sn;
     lQuery.execsql;
     lQuery.connection.commit;
   finally
@@ -182,5 +182,4 @@ class function TBancoDAO.Limpar(pBanco: TBanco): boolean;
 begin
 
 end;
-
 end.
