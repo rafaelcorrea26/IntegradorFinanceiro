@@ -2,7 +2,6 @@ program IntegradorFinanceiro;
 
 uses
   Vcl.Forms,
-  uImageHelper in '..\..\compartilhar\Classes\uImageHelper.pas',
   fModoADM in 'View\fModoADM.pas' {frmModoADM},
   fPrincipal in 'View\fPrincipal.pas' {frmPrincipal},
   uAuthentication in 'httpClient\uAuthentication.pas',
