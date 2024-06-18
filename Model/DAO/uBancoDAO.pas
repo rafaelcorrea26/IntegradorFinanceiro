@@ -5,7 +5,6 @@ interface
 uses
   System.Classes,
   uQuery,
-  pcnconversao,
   System.SysUtils,
   uFunctions,
   uBanco,
