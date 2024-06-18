@@ -269,7 +269,7 @@ end;
 constructor TSettings.Create;
 begin
    Url := 'http://localhost:8080/api';      //  LOCAL
-  Login := 'cloque_email_aqui@teste.com';
+  Login := 'coloque_email_aqui@teste.com';
   Password := 'coloque_a_senha_aqui';
 
   TimerCP := TTimer.Create(nil);
@@ -834,16 +834,16 @@ begin
         lQuery.SQL.Add('      IF (NEW.SIT IS NOT NULL) THEN                                                      ');
         lQuery.SQL.Add('      ATUALIZAR = ''S'';                                                                     ');
         lQuery.SQL.Add('      END                                                                                    ');
-        lQuery.SQL.Add('      IF (OLD.Al09BxParcial IS NOT NULL) THEN                                                ');
+        lQuery.SQL.Add('      IF (OLD.BxParcial IS NOT NULL) THEN                                                ');
         lQuery.SQL.Add('      BEGIN                                                                                  ');
-        lQuery.SQL.Add('      IF  (OLD.Al09BxParcial <> NEW.Al09BxParcial )THEN                                      ');
+        lQuery.SQL.Add('      IF  (OLD.BxParcial <> NEW.BxParcial )THEN                                      ');
         lQuery.SQL.Add('      BEGIN                                                                                  ');
         lQuery.SQL.Add('      ATUALIZAR = ''S'';                                                                     ');
         lQuery.SQL.Add('      END                                                                                    ');
         lQuery.SQL.Add('      END                                                                                    ');
         lQuery.SQL.Add('      ELSE                                                                                   ');
         lQuery.SQL.Add('      BEGIN                                                                                  ');
-        lQuery.SQL.Add('      IF (NEW.Al09BxParcial IS NOT NULL) THEN                                                ');
+        lQuery.SQL.Add('      IF (NEW.BxParcial IS NOT NULL) THEN                                                ');
         lQuery.SQL.Add('      ATUALIZAR = ''S'';                                                                     ');
         lQuery.SQL.Add('      END                                                                                    ');
         lQuery.SQL.Add('      IF (ATUALIZAR = ''S'') THEN                                                            ');
