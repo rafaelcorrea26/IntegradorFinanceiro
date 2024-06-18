@@ -10,8 +10,8 @@ uses
   uConnection,
   System.SysUtils,
   uInterfacesEntity,
-  pcnConversao,
-  REST.JSON.Types, uConta;
+  REST.JSON.Types,
+  uConta;
 
 type
   TFormaPagamento = class;
@@ -48,9 +48,6 @@ type
     Fconfissao_divida: boolean;
 
     [jsonmarshalledattribute(false)]
-    findpag: tpcnindicadorpagamento;
-    [jsonmarshalledattribute(false)]
-    ftpag: tpcnformapagamento;
 
   public
     property codigo: integer read Fcodigo write Fcodigo;
@@ -84,10 +81,6 @@ type
     property administradora_tef: integer read Fadministradora_tef write Fadministradora_tef;
     property gerar_contas_receber: boolean read Fgerar_contas_receber write Fgerar_contas_receber;
     property codigo_scanntech: integer read Fcodigo_scanntech write Fcodigo_scanntech;
-
-    // não vai no json
-    property indpag: tpcnindicadorpagamento read findpag write findpag;
-    property tpag: tpcnformapagamento read ftpag write ftpag;
 
     destructor destroy; override;
     constructor create;
