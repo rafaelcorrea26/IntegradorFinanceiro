@@ -5,7 +5,6 @@ interface
 uses
   System.Classes,
   uQuery,
-  pcnconversao,
   System.SysUtils,
   uFunctions,
   uFormaPagamento,
@@ -307,47 +306,47 @@ begin
       pFormaPagamento.codigo_ecf := lQuery.fieldByName('CODECF').AsString;
       pFormaPagamento.Origem := lQuery.fieldByName('ORIG').AsString;
 
-      if (pFormaPagamento.Origem = 'CH') then
-      begin
-        pFormaPagamento.IndPag := ipVista;
-        pFormaPagamento.TPag := fpCheque;
-      end;
-
-      if (pFormaPagamento.Origem = 'CD') then
-      begin
-        pFormaPagamento.IndPag := ipVista;
-        pFormaPagamento.TPag := fpCartaoDebito;
-      end;
-
-      if (pFormaPagamento.Origem = 'CC') then
-      begin
-        pFormaPagamento.IndPag := ipPrazo;
-        pFormaPagamento.TPag := fpCartaoCredito;
-      end;
-
-      if (pFormaPagamento.Origem = 'NF') and (pFormaPagamento.Tipo = 'A') then
-      begin
-        pFormaPagamento.IndPag := ipVista;
-        pFormaPagamento.TPag := fpDinheiro;
-      end;
-
-      if (pFormaPagamento.Origem = 'NF') and (pFormaPagamento.Tipo = 'P') then
-      begin
-        pFormaPagamento.IndPag := ipPrazo;
-        pFormaPagamento.TPag := fpCreditoLoja;
-      end;
-
-      if (pFormaPagamento.Origem = 'DV') and (pFormaPagamento.Tipo = 'A') then
-      begin
-        pFormaPagamento.IndPag := ipVista;
-        pFormaPagamento.TPag := fpDinheiro;
-      end;
-
-      if (pFormaPagamento.Origem = 'FT') and (pFormaPagamento.Tipo = 'P') then
-      begin
-        pFormaPagamento.IndPag := ipPrazo;
-        pFormaPagamento.TPag := fpCreditoLoja;
-      end;
+//      if (pFormaPagamento.Origem = 'CH') then
+//      begin
+//        pFormaPagamento.IndPag := ipVista;
+//        pFormaPagamento.TPag := fpCheque;
+//      end;
+//
+//      if (pFormaPagamento.Origem = 'CD') then
+//      begin
+//        pFormaPagamento.IndPag := ipVista;
+//        pFormaPagamento.TPag := fpCartaoDebito;
+//      end;
+//
+//      if (pFormaPagamento.Origem = 'CC') then
+//      begin
+//        pFormaPagamento.IndPag := ipPrazo;
+//        pFormaPagamento.TPag := fpCartaoCredito;
+//      end;
+//
+//      if (pFormaPagamento.Origem = 'NF') and (pFormaPagamento.Tipo = 'A') then
+//      begin
+//        pFormaPagamento.IndPag := ipVista;
+//        pFormaPagamento.TPag := fpDinheiro;
+//      end;
+//
+//      if (pFormaPagamento.Origem = 'NF') and (pFormaPagamento.Tipo = 'P') then
+//      begin
+//        pFormaPagamento.IndPag := ipPrazo;
+//        pFormaPagamento.TPag := fpCreditoLoja;
+//      end;
+//
+//      if (pFormaPagamento.Origem = 'DV') and (pFormaPagamento.Tipo = 'A') then
+//      begin
+//        pFormaPagamento.IndPag := ipVista;
+//        pFormaPagamento.TPag := fpDinheiro;
+//      end;
+//
+//      if (pFormaPagamento.Origem = 'FT') and (pFormaPagamento.Tipo = 'P') then
+//      begin
+//        pFormaPagamento.IndPag := ipPrazo;
+//        pFormaPagamento.TPag := fpCreditoLoja;
+//      end;
 
       pFormaPagamento.nome_fiscal := lQuery.fieldByName('NOMEFISCAL').AsString;
       pFormaPagamento.permite_desconto := lQuery.fieldByName('DESCONTO').AsString;
