@@ -225,7 +225,7 @@ begin
       lblStatusServico.Font.Color := clRed;
       lblStatusServico.update;
 
-      ShowMessage('Favor conferir na configuraÁ„o o intervalo de envio.');
+      ShowMessage('Favor conferir na configura√ß√£o o intervalo de envio.');
     end
     else
     begin
@@ -266,14 +266,14 @@ end;
 
 function TfrmPrincipal.PermiteRodarTrigger: Boolean;
 begin
-  result := Application.MessageBox('Deseja Rodar o processo de criaÁ„o de triggers CP e CR?', 'N„o',
+  result := Application.MessageBox('Deseja Rodar o processo de cria√ß√£o de triggers CP e CR?', 'N√£o',
     mb_yesno + mb_iconquestion) = id_yes;
 end;
 
 procedure TfrmPrincipal.TotalizadorAPI;
 begin
   Tsettings.settings.ContadorIntegracao := Tsettings.settings.ContadorIntegracao + 1;
-  lblTotalizador.Caption := 'Total Conexıes API: ' + inttostr(Tsettings.settings.ContadorIntegracao) + ' ';
+  lblTotalizador.Caption := 'Total Conex√µes API: ' + inttostr(Tsettings.settings.ContadorIntegracao) + ' ';
   lblTotalizador.update;
 end;
 
@@ -295,16 +295,16 @@ begin
     try
       lQuery.Close;
       lQuery.SQL.Clear;
-      lQuery.SQL.Add('SELECT * FROM MC27PROP                                                        ');
-      lQuery.SQL.Add('where ((AC27_CHAVE is null) or (AC27_CHAVE = '''') or (AN27CODI_INT is null)) ');
+      lQuery.SQL.Add('SELECT * FROM PROP                                                        ');
+      lQuery.SQL.Add('where ((CHAVE is null) or (CHAVE = '''') or (CODI_INT is null)) ');
       lQuery.Open;
       if lQuery.recordcount > 0 then // Se tem registros
       begin
         while not lQuery.Eof do
         begin
-          if lQuery.FieldByName('AC27CNPJ').AsSTRING <> EmptyStr then
+          if lQuery.FieldByName('CNPJ').AsSTRING <> EmptyStr then
           begin
-            lCNPJ := lQuery.FieldByName('AC27CNPJ').AsSTRING;
+            lCNPJ := lQuery.FieldByName('CNPJ').AsSTRING;
             lhttp.getCodigoEChaveEmpresa(lCNPJ);
           end;
 
@@ -320,7 +320,7 @@ begin
   except
     on e: exception do
     begin
-      ShowMessage('Problemas ao salvar a configuraÁ„o.');
+      ShowMessage('Problemas ao salvar a configura√ß√£o.');
       result := False;
     end;
   end;
@@ -332,7 +332,7 @@ begin
   CreateMutex(nil, False, 'IntegradorFinanceiro');
   if GetLastError = ERROR_ALREADY_EXISTS then
   begin
-    MessageBox(0, 'Este programa j· est· sendo executado.', 'IntegradorContasPagar', MB_ICONSTOP);
+    MessageBox(0, 'Este programa j√° est√° sendo executado.', 'IntegradorContasPagar', MB_ICONSTOP);
     Halt(0);
   end;
 end;
@@ -416,7 +416,7 @@ end;
 
 procedure TfrmPrincipal.btnTestarFuncoesClick(Sender: TObject);
 begin
-  // funÁ„o para forÁar envio
+  // fun√ß√£o para for√ßar envio
   TestarIntegrador;
 end;
 
@@ -441,8 +441,8 @@ begin
   TMessages.Messages.messageok := EmptyStr;
   TMessages.Messages.messageerro := EmptyStr;
 
-  // Data ultimo sinc È passada no post e put para caso der sucesso  utiliza-la -1
-  // para atualizar o registro e n„o reenviar o cp nos prÛximos envio
+  // Data ultimo sinc √© passada no post e put para caso der sucesso  utiliza-la -1
+  // para atualizar o registro e n√£o reenviar o cp nos pr√≥ximos envio
   lUltimoSincronismo := IncMinute(TFunctions.RetornaUltimoSincCP, -1);
 
   lContasPagar := TContasPagar.Create;
@@ -451,16 +451,16 @@ begin
     // Carrega query para montar os json
     lQueryCP.SQL.Clear;
     lQueryCP.SQL.Add(' select                                                              ');
-    lQueryCP.SQL.Add('   P.AC08TIT                                                         ');
-    lQueryCP.SQL.Add(' , P.AC08EMP_TIT                                                     ');
+    lQueryCP.SQL.Add('   P.TIT                                                             ');
+    lQueryCP.SQL.Add(' , P.EMP_TIT                                                         ');
     lQueryCP.SQL.Add(' , I.DATA_ATUALIZACAO dt_att                                         ');
     lQueryCP.SQL.Add(' , I.EXCLUIDO EXCLUIDO                                               ');
     lQueryCP.SQL.Add(' , I.ENVIADO ENVIADO                                                 ');
-    lQueryCP.SQL.Add(' from MC08CPAG  P                                                    ');
+    lQueryCP.SQL.Add(' from CPAG  P                                                        ');
     lQueryCP.SQL.Add(' inner join  TBL_INTEG_CP I                                          ');
-    lQueryCP.SQL.Add(' on (P.AC08TIT = I.TITULO)                                           ');
+    lQueryCP.SQL.Add(' on (P.TIT = I.TITULO)                                               ');
     lQueryCP.SQL.Add(' WHERE I.DATA_ATUALIZACAO >= :ULTIMO_SINC                            ');
-    lQueryCP.SQL.Add(' order by P.AD08VCTO, P.AC08TIT                                      ');
+    lQueryCP.SQL.Add(' order by P.VCTO, P.TIT                                              ');
     lQueryCP.ParamByName('ULTIMO_SINC').AsDateTime := TFunctions.RetornaUltimoSincCP;
     lQueryCP.Open;
     lQueryCP.fetchall;
@@ -473,7 +473,7 @@ begin
       begin
         TContador.Contador.EnvioCP := TContador.Contador.EnvioCP + 1;
         lExcluido := lQueryCP.FieldByName('EXCLUIDO').AsSTRING = 'S';
-        lTitulo := lQueryCP.FieldByName('AC08TIT').AsSTRING;
+        lTitulo := lQueryCP.FieldByName('TIT').AsSTRING;
         lEnviado := lQueryCP.FieldByName('ENVIADO').AsSTRING = 'S';
 
         // Carrega pelo titulo para gerar json
@@ -482,7 +482,7 @@ begin
 
         lContasPagar.data_ultimo_sincronismo := TFunctions.DecodeDateHourJson(IncSecond(pDataIniProc, -1));
 
-        if lExcluido then // Controlamos pelo sku cÛdigo empresa + titulo
+        if lExcluido then // Controlamos pelo sku c√≥digo empresa + titulo
         begin
           if not(TContasPagarDAO.Delete(lContasPagar.empresa_titulo, lContasPagar.data_ultimo_sincronismo)) then
           begin
@@ -493,14 +493,14 @@ begin
         begin
           lContasPagar.chave_empresa := TFunctions.RetornaChaveEmpresaTitulo(lTitulo);
 
-          if lEnviado then // Controlamos pelo sku cÛdigo empresa + titulo
+          if lEnviado then // Controlamos pelo sku c√≥digo empresa + titulo
           begin
             if trim(lContasPagar.empresa_titulo) <> EmptyStr then
             begin
               lContasPagar.titulo := lContasPagar.empresa_titulo;
             end;
 
-            // AlteraÁ„o API
+            // Altera√ß√£o API
             if not(TContasPagarDAO.put(lTitulo, lUltimoSincronismo, lContasPagar)) then
             begin
               Tsettings.settings.PermiteAlterarDataSincronismoCP := False;
@@ -508,7 +508,7 @@ begin
           end
           else
           begin
-            // Inclus„o API
+            // Inclus√£o API
             lContasPagar.titulo := TFunctions.RetornaCodigoEmpresa + '-' + lTitulo;
             if not(TContasPagarDAO.post(lTitulo, lUltimoSincronismo, lContasPagar)) then
             begin
@@ -542,8 +542,8 @@ begin
   TMessages.Messages.messageok := EmptyStr;
   TMessages.Messages.messageerro := EmptyStr;
 
-  // Data ultimo sinc È passada no post e put para caso der sucesso  utiliza-la -1
-  // para atualizar o registro e n„o reenviar o cr nos prÛximos envio
+  // Data ultimo sinc √© passada no post e put para caso der sucesso  utiliza-la -1
+  // para atualizar o registro e n√£o reenviar o cr nos pr√≥ximos envio
   lUltimoSincronismo := IncMinute(TFunctions.RetornaUltimoSincCR, -1);
 
   lContasReceber := TContasReceber.Create;
@@ -552,16 +552,16 @@ begin
     // Carrega query para montar os json
     lQueryCR.SQL.Clear;
     lQueryCR.SQL.Add(' select                                                              ');
-    lQueryCR.SQL.Add('   P.AC09DUP                                                         ');
-    lQueryCR.SQL.Add(' , P.AC09EMP_DUP                                                     ');
+    lQueryCR.SQL.Add('   P.DUP                                                             ');
+    lQueryCR.SQL.Add(' , P.EMP_DUP                                                         ');
     lQueryCR.SQL.Add(' , I.DATA_ATUALIZACAO dt_att                                         ');
     lQueryCR.SQL.Add(' , I.EXCLUIDO EXCLUIDO                                               ');
     lQueryCR.SQL.Add(' , I.ENVIADO ENVIADO                                                 ');
-    lQueryCR.SQL.Add(' from MC09CREC  P                                                    ');
+    lQueryCR.SQL.Add(' from CREC  P                                                        ');
     lQueryCR.SQL.Add(' inner join  TBL_INTEG_CR I                                          ');
-    lQueryCR.SQL.Add(' on (P.AC09DUP = I.DUPLICATA)                                        ');
+    lQueryCR.SQL.Add(' on (P.DUP = I.DUPLICATA)                                            ');
     lQueryCR.SQL.Add(' WHERE I.DATA_ATUALIZACAO >= :ULTIMO_SINC                            ');
-    lQueryCR.SQL.Add(' order by P.AD09VCTO, P.AC09DUP                                      ');
+    lQueryCR.SQL.Add(' order by P.VCTO, P.DUP                                              ');
     lQueryCR.ParamByName('ULTIMO_SINC').AsDateTime := TFunctions.RetornaUltimoSincCR;
     lQueryCR.Open;
     lQueryCR.fetchall;
@@ -574,14 +574,14 @@ begin
       begin
         TContador.Contador.EnvioCR := TContador.Contador.EnvioCR + 1;
         lExcluido := lQueryCR.FieldByName('EXCLUIDO').AsSTRING = 'S';
-        lDuplicata := lQueryCR.FieldByName('AC09DUP').AsSTRING;
+        lDuplicata := lQueryCR.FieldByName('DUP').AsSTRING;
         lEnviado := lQueryCR.FieldByName('ENVIADO').AsSTRING = 'S';
 
         lContasReceber.Duplicata := lDuplicata;
         TContasReceberDao.Carrega(lContasReceber);
         lContasReceber.data_ultimo_sincronismo := TFunctions.DecodeDateHourJson(IncSecond(pDataIniProc, -1));
 
-        if lExcluido then // Controlamos pelo sku cÛdigo empresa + duplicata
+        if lExcluido then // Controlamos pelo sku c√≥digo empresa + duplicata
         begin
           if not(TContasReceberDao.Delete(lContasReceber.empresa_duplicata, lContasReceber.data_ultimo_sincronismo))
           then
@@ -593,7 +593,7 @@ begin
         begin
           lContasReceber.chave_empresa := TFunctions.RetornaChaveEmpresaDuplicata(lDuplicata);
 
-          if lEnviado then // Controlamos pelo sku cÛdigo empresa + duplicata
+          if lEnviado then // Controlamos pelo sku c√≥digo empresa + duplicata
           begin
             if (lContasReceber.empresa_duplicata <> EmptyStr) then
             begin
@@ -604,7 +604,7 @@ begin
               lContasReceber.Duplicata := TFunctions.RetornaCodigoEmpresa + '-' + lDuplicata;
             end;
 
-            // AlteraÁ„o API
+            // Altera√ß√£o API
             if not(TContasReceberDao.put(lDuplicata, lUltimoSincronismo, lContasReceber)) then
             begin
               Tsettings.settings.PermiteAlterarDataSincronismoCR := False;
@@ -612,7 +612,7 @@ begin
           end
           else
           begin
-            // Inclus„o API
+            // Inclus√£o API
             lContasReceber.Duplicata := TFunctions.RetornaCodigoEmpresa + '-' + lDuplicata;
             if not(TContasReceberDao.post(lDuplicata, lUltimoSincronismo, lContasReceber)) then
             begin
@@ -653,7 +653,7 @@ begin
     lPostContasPagarOk := EnviaCP(lDataInicio);
     AlimentaMemos;
 
-    // Se n„o deu erro atualizo data ultimo sincronismo CP
+    // Se n√£o deu erro atualizo data ultimo sincronismo CP
     if Tsettings.settings.PermiteAlterarDataSincronismoCP then
     begin
       if (lGetContasPagarOk) and (lPostContasPagarOk) then
@@ -683,7 +683,7 @@ begin
     lPostContasReceberOk := EnviaCR(lDataInicio);
     AlimentaMemos;
 
-    // Se n„o deu erro atualizo data ultimo sincronismo CR
+    // Se n√£o deu erro atualizo data ultimo sincronismo CR
     if Tsettings.settings.PermiteAlterarDataSincronismoCR then
     begin
       if (lGetContasReceberOk) and (lPostContasReceberOk) then
@@ -711,7 +711,7 @@ end;
 
 procedure TfrmPrincipal.FecharAplicao1Click(Sender: TObject);
 begin
-  if Application.MessageBox(PChar('Deseja realmente fechar a aplicaÁ„o?'), 'Encerramento do Sistema!',
+  if Application.MessageBox(PChar('Deseja realmente fechar a aplica√ß√£o?'), 'Encerramento do Sistema!',
     mb_yesno + mb_iconquestion + MB_DEFBUTTON2) = IDYES then
   begin
     Application.Terminate;
@@ -746,7 +746,7 @@ begin
   lEmpresa := TFunctions.RetornaNomeEmpresa;
   if trim(lEmpresa) <> EmptyStr then
   begin
-    lblVersion.Caption := 'Vers„o: ' + TFunctions.VersaoSistema + '   -   ' + lEmpresa;
+    lblVersion.Caption := 'Vers√£o: ' + TFunctions.VersaoSistema + '   -   ' + lEmpresa;
   end
   else
   begin
@@ -773,7 +773,7 @@ procedure TfrmPrincipal.FormShow(Sender: TObject);
 begin
   WindowState := wsMaximized;
   Tsettings.settings.ContadorIntegracao := 0;
-  lblTotalizador.Caption := 'Total Conexıes API: ' + inttostr(Tsettings.settings.ContadorIntegracao) + ' ';
+  lblTotalizador.Caption := 'Total Conex√µes API: ' + inttostr(Tsettings.settings.ContadorIntegracao) + ' ';
   lblTotalizador.update;
 end;
 
@@ -797,7 +797,7 @@ begin
   TrayIcon.Animate := true;
   TrayIcon.ShowBalloonHint;
   ShowWindow(Application.Handle, SW_HIDE);
-  // n„o mostra a aplicaÁ„o na barra de tarefas ao minimizar
+  // n√£o mostra a aplica√ß√£o na barra de tarefas ao minimizar
 end;
 
 procedure TfrmPrincipal.pnlModoAdmClick(Sender: TObject);
@@ -812,8 +812,8 @@ begin
 
     if lFormulario.PermiteModoADM then
     begin
-      lPermite := Application.MessageBox('Deseja Rodar o processo de criaÁ„o de triggers CP e CR?',
-        'Processo de criaÁ„o de triggers CP e CR', mb_yesno + mb_iconquestion) = id_yes;
+      lPermite := Application.MessageBox('Deseja Rodar o processo de cria√ß√£o de triggers CP e CR?',
+        'Processo de cria√ß√£o de triggers CP e CR', mb_yesno + mb_iconquestion) = id_yes;
 
       if lPermite then
       begin
@@ -835,10 +835,10 @@ begin
   lQueryCP := TQuery.Create(nil);
   try
     lQueryCP.SQL.Clear;
-    lQueryCP.SQL.Add('select AC08TIT from MC08CPAG ');
-    lQueryCP.SQL.Add(' where AC08TIT = :AC08TIT    ');
-    lQueryCP.SQL.Add('order by AC08TIT             ');
-    lQueryCP.ParamByName('AC08TIT').AsSTRING := '000001';
+    lQueryCP.SQL.Add('select TIT from CPAG ');
+    lQueryCP.SQL.Add(' where TIT = :TIT    ');
+    lQueryCP.SQL.Add('order by TIT     ');
+    lQueryCP.ParamByName('TIT').AsSTRING := '000001';
     lQueryCP.Open;
     lQueryCP.First;
 
@@ -846,7 +846,7 @@ begin
     begin
       while not(lQueryCP.Eof) do
       begin
-        lContasPagar.titulo := lQueryCP.FieldByName('AC08TIT').AsSTRING;
+        lContasPagar.titulo := lQueryCP.FieldByName('TIT').AsSTRING;
         TContasPagarDAO.Carrega(lContasPagar);
         TFunctions.writeJson('cp', lContasPagar.tojsonWithEmpty); // showmessage(lContasPagar.tojson);
 
@@ -870,10 +870,10 @@ begin
   lQueryCR := TQuery.Create(nil);
   try
     lQueryCR.SQL.Clear;
-    lQueryCR.SQL.Add('select AC09DUP from MC09CREC ');
-    lQueryCR.SQL.Add(' where AC09DUP = :AC09DUP    ');
-    lQueryCR.SQL.Add('order by AC09DUP             ');
-    lQueryCR.ParamByName('AC09DUP').AsSTRING := '00003/05-A';
+    lQueryCR.SQL.Add('select DUP from CREC ');
+    lQueryCR.SQL.Add(' where DUP = :DUP    ');
+    lQueryCR.SQL.Add('order by DUP         ');
+    lQueryCR.ParamByName('DUP').AsSTRING := '00003/05-A';
     lQueryCR.Open;
     lQueryCR.First;
 
@@ -881,7 +881,7 @@ begin
     begin
       while not(lQueryCR.Eof) do
       begin
-        lContasReceber.Duplicata := lQueryCR.FieldByName('AC09DUP').AsSTRING;
+        lContasReceber.Duplicata := lQueryCR.FieldByName('DUP').AsSTRING;
         TContasReceberDao.Carrega(lContasReceber);
         TFunctions.writeJson('cr', lContasReceber.tojsonWithEmpty); // showmessage(lContasReceber.tojson);
 
@@ -923,8 +923,8 @@ begin
     lFormulario.pnlTitulo.update;
 
     EventoTimerSt(Self); // Pega config
-    EventoTimerCP(Self); // IntegraÁ„o CP
-    EventoTimerCR(Self); // IntegraÁ„o CR
+    EventoTimerCP(Self); // Integra√ß√£o CP
+    EventoTimerCR(Self); // Integra√ß√£o CR
 
     TotalizadorAPI;
     Sleep(3000);
@@ -955,8 +955,8 @@ begin
           Screen.Cursor := crHourGlass;
 
           EventoTimerSt(Self); // Pega config
-          EventoTimerCP(Self); // IntegraÁ„o CP
-          EventoTimerCR(Self); // IntegraÁ„o CR
+          EventoTimerCP(Self); // Integra√ß√£o CP
+          EventoTimerCR(Self); // Integra√ß√£o CR
 
           AlteraEnabledBotoes;
 
