@@ -53,11 +53,6 @@ implementation
 
 { TConnection }
 
-function TConnection.ConnectionDFe: TFDConnection;
-begin
-  Result := FConexaoDFe;
-end;
-
 function TConnection.Connection: TFDConnection;
 begin
   Result := FConexao;
@@ -80,7 +75,6 @@ end;
 destructor TConnection.Destroy;
 begin
   FreeAndNil(FConexao);
-  FreeAndNil(FConexaoDFe);
   inherited;
 end;
 
